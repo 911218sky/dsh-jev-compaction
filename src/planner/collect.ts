@@ -13,6 +13,7 @@ import type { ToolCallInfo } from "../dsh/surface.js";
 import {
   buildCallIndex,
   hasOnlyTextBlocks,
+  normalizeToolResultMessage,
   readSurfaceEvents,
 } from "../dsh/surface.js";
 import { PRUNED_BY } from "../mutation/render.js";
@@ -69,38 +70,17 @@ function readRawResult(
   event: ReturnType<typeof readSurfaceEvents>[number],
 ): RawResultEvent | undefined {
   if (event.type !== "tool/result") return undefined;
-  const data = event.data as {
-    turn: number;
-    step: number;
-    message: {
-      source: { callId: string };
-      content: [
-        {
-          toolCallId: string;
-          isError?: boolean;
-          content: { type: string; text?: string }[];
-        },
-      ];
-    };
-  };
-  const block = data.message.content[0];
-  if (block === undefined || block.toolCallId !== data.message.source.callId)
-    return undefined;
-  const textOnly = block.content.every((inner) => inner.type === "text");
-  const text = block.content
-    .filter(
-      (inner): inner is { type: "text"; text: string } => inner.type === "text",
-    )
-    .map((inner) => inner.text)
-    .join("\n");
+  const data = event.data as { turn: number; step: number; message: unknown };
+  const normalized = normalizeToolResultMessage(data.message);
+  if (normalized === undefined) return undefined;
   return {
     seq: event.seq,
     turn: data.turn,
     step: data.step,
-    callId: data.message.source.callId,
-    isError: block.isError === true,
-    text,
-    textOnly,
+    callId: normalized.callId,
+    isError: normalized.isError,
+    text: normalized.text,
+    textOnly: normalized.textOnly,
   };
 }
 

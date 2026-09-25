@@ -5,6 +5,10 @@
  * freshness, and constructs legal single-node `tool/result` replacements.
  * Every DSH-version-specific field name lives here; callers pass normalized
  * data in and get normalized data out.
+ *
+ * DSH ≤0.1.6 used a nested `tool-result` content block. DSH 0.1.7+ flattens
+ * `ToolResultMessage` (`toolCallId` / `isError` on the message; `content` is
+ * plain text/image blocks). Both shapes are accepted here.
  */
 
 import { freezeMessage } from "@deepseek-ai/dsh-llm";
@@ -34,6 +38,94 @@ export interface ToolCallInfo {
 export interface SurfaceSnapshot {
   readonly replaceGeneration: number;
   readonly nodes: readonly SessionSeq[];
+}
+
+/** Normalized view of one tool/result message (v3 nested or v4 flat). */
+export interface NormalizedToolResult {
+  readonly callId: string;
+  readonly isError: boolean;
+  readonly textOnly: boolean;
+  readonly text: string;
+  /** True when the message uses the DSH 0.1.7 flat ToolResultMessage shape. */
+  readonly flat: boolean;
+}
+
+type TextBlock = { type: string; text?: string };
+
+type NestedToolResultBlock = {
+  type?: string;
+  toolCallId: string;
+  isError?: boolean;
+  content: TextBlock[];
+};
+
+type ToolResultMessageLike = {
+  source?: { callId?: string };
+  toolCallId?: string;
+  isError?: boolean;
+  content?: unknown[];
+};
+
+function isTextOnly(blocks: readonly TextBlock[]): boolean {
+  return blocks.length > 0 && blocks.every((block) => block.type === "text");
+}
+
+function joinText(blocks: readonly TextBlock[]): string {
+  return blocks
+    .filter(
+      (block): block is { type: "text"; text: string } =>
+        block.type === "text" && typeof block.text === "string",
+    )
+    .map((block) => block.text)
+    .join("\n");
+}
+
+/**
+ * Normalize a tool/result message from either DSH shape.
+ * Returns undefined when the payload is incomplete or call ids disagree.
+ */
+export function normalizeToolResultMessage(
+  message: unknown,
+): NormalizedToolResult | undefined {
+  if (message === null || typeof message !== "object") return undefined;
+  const msg = message as ToolResultMessageLike;
+  const sourceCallId = msg.source?.callId;
+  if (typeof sourceCallId !== "string" || sourceCallId.length === 0)
+    return undefined;
+  if (!Array.isArray(msg.content) || msg.content.length === 0) return undefined;
+
+  // DSH 0.1.7+ flat ToolResultMessage.
+  if (typeof msg.toolCallId === "string") {
+    if (msg.toolCallId !== sourceCallId) return undefined;
+    const blocks = msg.content as TextBlock[];
+    if (!blocks.every((block) => typeof block?.type === "string"))
+      return undefined;
+    return {
+      callId: sourceCallId,
+      isError: msg.isError === true,
+      textOnly: isTextOnly(blocks),
+      text: joinText(blocks),
+      flat: true,
+    };
+  }
+
+  // Legacy nested tool-result content block (≤0.1.6 / v3 logs).
+  const block = msg.content[0] as NestedToolResultBlock | undefined;
+  if (
+    block === undefined ||
+    typeof block.toolCallId !== "string" ||
+    block.toolCallId !== sourceCallId ||
+    !Array.isArray(block.content)
+  ) {
+    return undefined;
+  }
+  return {
+    callId: sourceCallId,
+    isError: block.isError === true,
+    textOnly: isTextOnly(block.content),
+    text: joinText(block.content),
+    flat: false,
+  };
 }
 
 /** Read the ordered current surface events (one pass, no rescans). */
@@ -72,20 +164,13 @@ export function buildCallIndex(session: Session): Map<string, ToolCallInfo> {
 
 /** True when the result carries only text blocks (v1 mutation domain). */
 export function hasOnlyTextBlocks(event: SessionEvent<"tool/result">): boolean {
-  return event.data.message.content[0].content.every(
-    (block) => block.type === "text",
-  );
+  const normalized = normalizeToolResultMessage(event.data.message);
+  return normalized?.textOnly === true;
 }
 
 /** Joined text of the result's text blocks, separated by newlines. */
 export function extractResultText(event: SessionEvent<"tool/result">): string {
-  return event.data.message.content[0].content
-    .filter(
-      (block): block is ContentBlock & { type: "text"; text: string } =>
-        block.type === "text",
-    )
-    .map((block) => block.text)
-    .join("\n");
+  return normalizeToolResultMessage(event.data.message)?.text ?? "";
 }
 
 /** Capture the surface identity used to detect drift across async work. */
@@ -121,9 +206,8 @@ export function isSnapshotFresh(
 /**
  * Append one replay-safe replacement for a single `tool/result` node. The
  * caller must have validated `isSnapshotFresh` immediately before. Only the
- * textual content of the first tool-result block changes; every other field
- * of the original event data is carried over verbatim, which is exactly what
- * the session's `tool/result` rewrite invariant admits.
+ * textual content changes; every other field of the original event data is
+ * carried over verbatim.
  *
  * @returns the replacement event's seq.
  */
@@ -132,17 +216,31 @@ export function appendToolResultReplacement(
   original: SessionEvent<"tool/result">,
   replacementText: string,
 ): SessionSeq {
-  const result = original.data.message.content[0];
+  const normalized = normalizeToolResultMessage(original.data.message);
+  if (normalized === undefined) {
+    throw new Error("tool/result message shape is not replaceable");
+  }
   const content: ContentBlock[] = [{ type: "text", text: replacementText }];
-  const message = freezeMessage<SessionToolResultMessage>({
-    ...original.data.message,
-    content: [
-      {
-        ...result,
-        content,
-      },
-    ],
-  } as ToolResultMessage);
+
+  let message: SessionToolResultMessage;
+  if (normalized.flat) {
+    message = freezeMessage<SessionToolResultMessage>({
+      ...original.data.message,
+      content,
+    } as ToolResultMessage);
+  } else {
+    const result = original.data.message.content[0] as NestedToolResultBlock;
+    message = freezeMessage<SessionToolResultMessage>({
+      ...original.data.message,
+      content: [
+        {
+          ...result,
+          content,
+        },
+      ],
+    } as ToolResultMessage);
+  }
+
   const replacement = session.append(
     "tool/result",
     {
