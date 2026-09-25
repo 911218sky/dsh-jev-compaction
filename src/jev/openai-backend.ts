@@ -307,6 +307,8 @@ export class OpenAIChatDecisionClient implements SystemOneBackend {
         "",
         `question (${question.name}): ${question.instructions}`,
       ].join("\n");
+      // FLock this-that models reject plain chat; they require json_schema choice
+      // (see test_flock_this_that.py). Not a free-form OpenAI completion.
       const response = await this.fetcher(endpoint, {
         method: "POST",
         headers,
@@ -317,10 +319,14 @@ export class OpenAIChatDecisionClient implements SystemOneBackend {
             type: "json_schema",
             json_schema: {
               name: "choice",
+              strict: true,
               schema: {
                 type: "object",
-                properties: { answer: { enum: ["yes", "no"] } },
+                properties: {
+                  answer: { type: "string", enum: ["yes", "no"] },
+                },
                 required: ["answer"],
+                additionalProperties: false,
               },
             },
           },
