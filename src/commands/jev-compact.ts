@@ -15,7 +15,11 @@ import type {
   CommandResult,
 } from "../dsh/types.js";
 import type { JevCompactionPlan } from "../planner/plan.js";
-import type { JevCompactionService, JevRunReport } from "../service.js";
+import type {
+  JevCompactionService,
+  JevRunReport,
+  JevSkipReason,
+} from "../service.js";
 
 /** Structural command registry view (host contract). */
 export interface CommandRegistryLike {
@@ -27,6 +31,75 @@ export interface CommandRegistryLike {
       invocation: CommandInvocation,
     ): CommandResult | Promise<CommandResult>;
   }): unknown;
+}
+
+/** Plain-language skip reasons for `/jev-compact` operators. */
+function explainSkip(reason: JevSkipReason | undefined): string {
+  switch (reason) {
+    case "no-candidates":
+      return [
+        "Nothing to trim: no eligible old tool results in this session.",
+        "",
+        "Jev only shortens stale tool output (shell / search / file reads).",
+        "It does not rewrite chat messages. Run more tool-heavy work, then try again.",
+      ].join("\n");
+    case "not-enough-candidates":
+      return [
+        "Not enough old tool results yet to start pruning.",
+        "",
+        "A minimum candidate count is required so useful recent output is not removed too early.",
+      ].join("\n");
+    case "not-enough-candidate-chars":
+      return [
+        "Candidate tool results are still too small to be worth pruning.",
+        "",
+        "Trimming short output saves little context, so this run was skipped.",
+      ].join("\n");
+    case "pressure-not-met":
+      return [
+        "Context pressure is still below the trigger threshold.",
+        "",
+        "The session is not full enough yet. Compaction becomes useful as the context grows.",
+      ].join("\n");
+    case "cooldown":
+      return [
+        "Compaction ran recently and is still in cooldown.",
+        "",
+        "Automatic runs wait a few turns between passes to avoid repeated edits.",
+      ].join("\n");
+    case "savings-gate":
+      return [
+        "Scoring finished, but estimated savings were too small to apply.",
+        "",
+        "This is intentional: weak savings are skipped to avoid risky edits.",
+      ].join("\n");
+    case "empty-plan":
+      return [
+        "Candidates were scored, and all of them should stay as-is.",
+        "",
+        "Nothing was changed because the decision model still needs this tool output.",
+      ].join("\n");
+    case "disabled":
+      return "Jev compaction is disabled (enabled: false).";
+    case "busy":
+      return [
+        "Could not apply right now (busy, cancelled, or the conversation surface just changed).",
+        "",
+        "Try again shortly. Normal chat is unaffected.",
+      ].join("\n");
+    case "jev-failed":
+      return [
+        "The decision backend failed, so pruning was skipped (fail-open).",
+        "",
+        "Chat continues normally. Check the API key, network, and model settings.",
+      ].join("\n");
+    default:
+      return [
+        "Nothing to do this time.",
+        "",
+        "Jev only trims stale tool output; it does not summarize the conversation itself.",
+      ].join("\n");
+  }
 }
 
 function formatScores(report: JevRunReport): string {
@@ -46,7 +119,7 @@ function formatScores(report: JevRunReport): string {
     const score = (item.scores?.needContents ?? 0).toFixed(2);
     return `- ${label}${args.length > 0 ? ` ${args}` : ""}  ${score}`;
   });
-  return `\nHighest-confidence stub candidates:\n${lines.join("\n")}`;
+  return `\nMost likely stub candidates:\n${lines.join("\n")}`;
 }
 
 function formatPlanCounts(plan: JevCompactionPlan): string {
@@ -59,7 +132,11 @@ function formatPlanCounts(plan: JevCompactionPlan): string {
   const stubbed = plan.items.filter(
     (item) => item.action === "KEEP_STUB",
   ).length;
-  return `Would keep full: ${keptFull}\nWould truncate: ${truncated}\nWould stub: ${stubbed}`;
+  return [
+    `Keep full: ${keptFull}`,
+    `Truncate: ${truncated}`,
+    `Stub: ${stubbed}`,
+  ].join("\n");
 }
 
 /**
@@ -99,8 +176,7 @@ function renderReport(
   shaping?: ReturnType<JevCompactionService["shaping"]["stats"]>,
 ): string {
   if (report.skipped !== undefined && report.plan === undefined) {
-    const reason = report.skipped.replace(/-/g, " ");
-    return `Jev compaction: nothing to do (${reason}).`;
+    return `Jev compaction\n\n${explainSkip(report.skipped)}`;
   }
   const header =
     report.mode === "dry-run"
@@ -128,15 +204,15 @@ function renderReport(
     if (includeScores) lines.push(formatScores(report));
     if (report.mode === "dry-run") {
       if (shaping !== undefined) lines.push(...formatShapingStats(shaping));
-      lines.push("", "No changes were made.");
+      lines.push("", "Preview only — no session changes were made.");
       return lines.join("\n");
     }
     if (report.queuedForNextStep === true) {
       lines.push(
         "",
-        "Queued: the plan will be applied before the next model step, " +
-          "when the session can safely accept tool-result replacements. " +
-          "The plan is recomputed at that time and dropped if the surface changed.",
+        "Queued: applied before the next model step,",
+        "when tool-result replacements are safe.",
+        "The plan is recomputed then and dropped if the surface changed.",
       );
     }
     return lines.join("\n");
@@ -149,21 +225,21 @@ function renderReport(
     const percent =
       before > 0 ? ` (${((saved / before) * 100).toFixed(1)}%)` : "";
     lines.push(
-      `Before:       ${before.toLocaleString("en-US")} estimated tokens`,
-      `After:        ${after.toLocaleString("en-US")} estimated tokens`,
-      `Saved:        ${saved.toLocaleString("en-US")}${percent}`,
+      `Before: ${before.toLocaleString("en-US")} estimated tokens`,
+      `After: ${after.toLocaleString("en-US")} estimated tokens`,
+      `Saved: ${saved.toLocaleString("en-US")}${percent}`,
       "",
-      `Candidates:   ${report.candidates}`,
-      `Full kept:    ${report.keptFull}`,
-      `Truncated:    ${report.truncated}`,
-      `Stubbed:      ${report.stubbed}`,
+      `Candidates: ${report.candidates}`,
+      `Full kept: ${report.keptFull}`,
+      `Truncated: ${report.truncated}`,
+      `Stubbed: ${report.stubbed}`,
       "",
       "Applied before this step's model request; the pending queue is now empty.",
     );
     return lines.join("\n");
   }
 
-  return `Jev compaction: nothing to do (${report.skipped?.replace(/-/g, " ") ?? "no eligible candidates"}).`;
+  return `Jev compaction\n\n${explainSkip(report.skipped)}`;
 }
 
 /** Register `/jev-compact` on the host command registry. */
@@ -173,7 +249,8 @@ export function registerJevCompactCommand(
 ): () => void {
   const disposer = commands.register({
     name: "jev-compact",
-    description: "Prune stale tool output with Jev (add --dry-run to preview)",
+    description:
+      "Trim stale tool output to free context (add --dry-run to preview)",
     input: { hint: "[--dry-run]" },
     handler: (invocation: CommandInvocation): Promise<CommandResult> =>
       (async (): Promise<CommandResult> => {
@@ -186,7 +263,11 @@ export function registerJevCompactCommand(
           if (report.error !== undefined) {
             return {
               kind: "error",
-              text: `Jev compaction failed: ${report.error}`,
+              text: [
+                "Jev compaction failed (chat continues; pruning was skipped).",
+                "",
+                report.error,
+              ].join("\n"),
             };
           }
           if (dryRun) {
@@ -214,7 +295,11 @@ export function registerJevCompactCommand(
         } catch (error: unknown) {
           return {
             kind: "error",
-            text: `Jev compaction failed: ${error instanceof Error ? error.message : String(error)}`,
+            text: [
+              "Jev compaction failed (chat continues).",
+              "",
+              error instanceof Error ? error.message : String(error),
+            ].join("\n"),
           };
         }
       })(),

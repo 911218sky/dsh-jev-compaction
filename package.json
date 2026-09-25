@@ -1,6 +1,6 @@
 {
   "name": "dsh-jev-compaction",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Semantic pruning of stale tool results for DeepSeek Harness (Jev / System One + OpenAI-compatible decision backends).",
   "author": "911218sky",
   "license": "MIT",
