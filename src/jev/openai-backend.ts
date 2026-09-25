@@ -2,7 +2,7 @@
  * OpenAI-compatible chat/completions decision backend.
  *
  * Speaks the same SystemOneBackend contract as System One clients, but
- * scores candidates by prompting any OpenAI-compatible gateway (OpenAI, FLock,
+ * scores candidates by prompting any OpenAI-compatible gateway (OpenAI,
  * LiteLLM proxies, self-hosted vLLM, …). Fail-open: malformed JSON or HTTP
  * errors surface as transport/invalid-response errors for the service to skip.
  */

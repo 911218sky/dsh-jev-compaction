@@ -12,7 +12,7 @@ import z from "@deepseek-ai/schemastery";
 
 /** Endpoint presets shipped with the plugin (SPEC §18, §26.3). */
 export const SYSTEM_ONE_PRESETS = {
-  /** OpenAI-compatible chat/completions (any gateway: OpenAI, FLock, proxies, …). */
+  /** OpenAI-compatible chat/completions (any gateway: OpenAI, LiteLLM, vLLM, …). */
   openai: {
     baseUrl: "https://api.openai.com/v1",
     apiKeyEnv: "OPENAI_API_KEY",
