@@ -1,0 +1,16 @@
+---
+description: Use official TypeSafe / Jev docs as the canonical examples
+alwaysApply: true
+---
+
+# TypeSafe Jev examples
+
+When documenting, configuring, or writing examples for this plugin's decision backend:
+
+- Prefer **TypeSafe hosted Jev** (`decision.provider: typesafe`) as the primary example.
+- Use official endpoints and names from https://docs.typesafe.ai/introduction (and quick start / models pages):
+  - `baseUrl: https://api.typesafe.ai/v1/systemone`
+  - `apiKeyEnv: TYPESAFE_API_KEY`
+  - `model: jev-latest`
+- Do not invent alternate vendor examples (third-party chat gateways) in README or config samples unless the user explicitly asks for an `openai` / `jeff` / `custom` alternate.
+- Link to TypeSafe docs rather than paraphrasing API semantics when uncertain.
