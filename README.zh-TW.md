@@ -18,7 +18,7 @@
 
 | `decision.provider` | 協定 | 用途 |
 | --- | --- | --- |
-| **`openai`（預設）** | OpenAI 相容 `…/v1/chat/completions` | 任意閘道：OpenAI、FLock、LiteLLM、vLLM、EasyTokens… |
+| **`openai`（預設）** | OpenAI 相容 `…/v1/chat/completions` | 任意閘道：OpenAI、LiteLLM、vLLM、EasyTokens… |
 | `typesafe` | System One | TypeSafe 託管 Jev |
 | `jeff` | System One | 自架 Jeff |
 | `custom` | System One | 自有 `/v1/systemone` |
@@ -28,7 +28,7 @@
 - API key 只放**環境變數**（不要進 Git）。預設變數名 `OPENAI_API_KEY`（可用 `decision.openai.apiKeyEnv` 改）。
 - `baseUrl` 填閘道的 `…/v1`，`model` 填該閘道的模型 id。
 - 一般生成模型走 JSON 評分 prompt。
-- 模型 id 含 `this-that` 時走 **choice**（yes/no）並用回傳機率當分數（例如 FLock 的 `this-that-model-1.2` 這類選擇模型）。
+- 模型 id 含 `this-that` 時走 **choice**（yes/no）並用回傳機率當分數。
 
 ```yaml
 decision:

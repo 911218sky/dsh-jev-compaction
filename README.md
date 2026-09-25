@@ -18,7 +18,7 @@ Long sessions fill the context with outdated shell logs, searches, and file dump
 
 | `decision.provider` | Wire protocol | Typical use |
 | --- | --- | --- |
-| **`openai` (default)** | OpenAI-compatible `…/v1/chat/completions` | Any gateway: OpenAI, FLock, LiteLLM, vLLM, EasyTokens, … |
+| **`openai` (default)** | OpenAI-compatible `…/v1/chat/completions` | Any gateway: OpenAI, LiteLLM, vLLM, EasyTokens, … |
 | `typesafe` | System One | Hosted TypeSafe Jev |
 | `jeff` | System One | Self-hosted Jeff |
 | `custom` | System One | Your own `/v1/systemone` |
@@ -28,7 +28,7 @@ For `openai`:
 - Put the API key in an **environment variable** (never in git). Default name: `OPENAI_API_KEY` (override with `decision.openai.apiKeyEnv`).
 - Set `decision.openai.baseUrl` to the gateway’s `…/v1` root and `decision.openai.model` to that gateway’s model id.
 - Generative chat models use a JSON scoring prompt.
-- Models whose id contains `this-that` use a **choice** schema (`yes`/`no`) and map returned probabilities to scores (verified against choice-style APIs such as FLock’s `this-that-model-1.2`).
+- Models whose id contains `this-that` use a **choice** schema (`yes`/`no`) and map returned probabilities to scores.
 
 Example (any OpenAI-compatible host):
 

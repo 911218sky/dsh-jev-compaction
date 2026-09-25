@@ -5,23 +5,23 @@ import { describe, expect, it, vi } from "vitest";
 import { OpenAIChatDecisionClient } from "./openai-backend.js";
 import { resolveJevCompactionConfig } from "../config.js";
 
-function flockChoiceConfig(model: string) {
+function openaiChoiceConfig(model: string) {
   return resolveJevCompactionConfig({
     enabled: true,
     decision: {
       provider: "openai",
       openai: {
-        baseUrl: "https://api.flock.io/v1",
-        apiKeyEnv: "FLOCK_API_KEY",
+        baseUrl: "https://api.example.com/v1",
+        apiKeyEnv: "OPENAI_API_KEY",
         model,
       },
     },
   });
 }
 
-describe("FLock this-that choice protocol", () => {
+describe("this-that choice protocol", () => {
   it("routes this-that-model-1.0 to json_schema choice, not json_object LLM scoring", async () => {
-    process.env.FLOCK_API_KEY = "sk-test-choice-only";
+    process.env.OPENAI_API_KEY = "sk-test-choice-only";
     const bodies: unknown[] = [];
     const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
       bodies.push(JSON.parse(String(init?.body)));
@@ -43,7 +43,7 @@ describe("FLock this-that choice protocol", () => {
     });
 
     const client = new OpenAIChatDecisionClient(
-      () => flockChoiceConfig("this-that-model-1.0"),
+      () => openaiChoiceConfig("this-that-model-1.0"),
       fetchMock as unknown as typeof fetch,
     );
 
@@ -82,7 +82,7 @@ describe("FLock this-that choice protocol", () => {
   });
 
   it("non-this-that models may use json_object LLM path", async () => {
-    process.env.FLOCK_API_KEY = "sk-test-choice-only";
+    process.env.OPENAI_API_KEY = "sk-test-choice-only";
     const bodies: unknown[] = [];
     const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
       bodies.push(JSON.parse(String(init?.body)));
@@ -105,7 +105,7 @@ describe("FLock this-that choice protocol", () => {
     });
 
     const client = new OpenAIChatDecisionClient(
-      () => flockChoiceConfig("gpt-4o-mini"),
+      () => openaiChoiceConfig("gpt-4o-mini"),
       fetchMock as unknown as typeof fetch,
     );
     await client.score(
