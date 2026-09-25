@@ -14,33 +14,42 @@ Long sessions fill the context with outdated shell logs, searches, and file dump
 
 ---
 
-## Decision backends
+## Decision backend (recommended: TypeSafe Jev)
 
-| `decision.provider` | Wire protocol | Typical use |
-| --- | --- | --- |
-| **`openai` (default)** | OpenAI-compatible `…/v1/chat/completions` | Any gateway: OpenAI, LiteLLM, vLLM, EasyTokens, … |
-| `typesafe` | System One | Hosted TypeSafe Jev |
-| `jeff` | System One | Self-hosted Jeff |
-| `custom` | System One | Your own `/v1/systemone` |
+Use hosted **TypeSafe System One** ([docs](https://docs.typesafe.ai/introduction), [quick start](https://docs.typesafe.ai/introduction/quickstart)). Jev evaluates typed questions against a state and returns structured answers — see [models](https://docs.typesafe.ai/models) (`jev-latest` → current stable).
 
-For `openai`:
-
-- Put the API key in an **environment variable** (never in git). Default name: `OPENAI_API_KEY` (override with `decision.openai.apiKeyEnv`).
-- Set `decision.openai.baseUrl` to the gateway’s `…/v1` root and `decision.openai.model` to that gateway’s model id.
-- Generative chat models use a JSON scoring prompt.
-- Models whose id contains `this-that` use a **choice** schema (`yes`/`no`) and map returned probabilities to scores.
-
-Example (any OpenAI-compatible host):
+1. Create an API key in the [TypeSafe dashboard](https://docs.typesafe.ai/introduction/quickstart).
+2. Put it in `TYPESAFE_API_KEY` (never in git).
+3. Point the plugin at the official System One endpoint:
 
 ```yaml
 # cordis / plugin config (keys stay in the environment)
 decision:
-  provider: openai
-  openai:
-    baseUrl: https://api.example.com/v1
-    apiKeyEnv: OPENAI_API_KEY
-    model: your-model-id
+  provider: typesafe
+  typesafe:
+    baseUrl: https://api.typesafe.ai/v1/systemone
+    apiKeyEnv: TYPESAFE_API_KEY
+    model: jev-latest
 ```
+
+That matches the official wire call:
+
+```http
+POST https://api.typesafe.ai/v1/systemone
+Authorization: Bearer <API_KEY>
+Content-Type: application/json
+```
+
+### Other providers
+
+| `decision.provider` | Wire protocol | Typical use |
+| --- | --- | --- |
+| **`typesafe`** | System One | Hosted TypeSafe Jev (recommended) |
+| `jeff` | System One | Self-hosted Jeff |
+| `custom` | System One | Your own `/v1/systemone` |
+| `openai` | OpenAI-compatible `…/v1/chat/completions` | Alternate chat gateways |
+
+For `openai`, set `decision.openai.baseUrl` / `apiKeyEnv` / `model`. Generative models use a JSON scoring prompt; model ids containing `this-that` use a yes/no **choice** schema.
 
 ---
 
@@ -48,7 +57,7 @@ decision:
 
 - **Node.js LTS** (`engines`: `>=20`; run the current Active LTS you maintain)
 - DSH web profile **0.1.7-rc.2+**
-- Optional: System One key vars if you use `typesafe` / `jeff` / `custom`
+- `TYPESAFE_API_KEY` when using the recommended `typesafe` provider
 
 ---
 
@@ -56,7 +65,7 @@ decision:
 
 ```bash
 dsh plugin --profile web add github:911218sky/dsh-jev-compaction#main
-# set the env var named by apiKeyEnv, then restart dsh-web
+# export TYPESAFE_API_KEY=… then restart dsh-web
 ```
 
 Or add to `$DSH_HOME/profiles/web/package.json` dependencies / `dsh.profile.bundles`, install, restart.

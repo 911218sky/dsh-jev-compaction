@@ -14,30 +14,41 @@
 
 ---
 
-## 決策後端
+## 決策後端（建議：TypeSafe Jev）
 
-| `decision.provider` | 協定 | 用途 |
-| --- | --- | --- |
-| **`openai`（預設）** | OpenAI 相容 `…/v1/chat/completions` | 任意閘道：OpenAI、LiteLLM、vLLM、EasyTokens… |
-| `typesafe` | System One | TypeSafe 託管 Jev |
-| `jeff` | System One | 自架 Jeff |
-| `custom` | System One | 自有 `/v1/systemone` |
+使用託管的 **TypeSafe System One**（[介紹](https://docs.typesafe.ai/introduction)、[快速開始](https://docs.typesafe.ai/introduction/quickstart)）。Jev 對 state 做 typed questions，直接回傳結構化答案 — 見 [models](https://docs.typesafe.ai/models)（`jev-latest` 對應現行穩定版）。
 
-`openai` 說明：
-
-- API key 只放**環境變數**（不要進 Git）。預設變數名 `OPENAI_API_KEY`（可用 `decision.openai.apiKeyEnv` 改）。
-- `baseUrl` 填閘道的 `…/v1`，`model` 填該閘道的模型 id。
-- 一般生成模型走 JSON 評分 prompt。
-- 模型 id 含 `this-that` 時走 **choice**（yes/no）並用回傳機率當分數。
+1. 在 [TypeSafe dashboard](https://docs.typesafe.ai/introduction/quickstart) 建立 API key。
+2. 放到環境變數 `TYPESAFE_API_KEY`（不要進 Git）。
+3. 外掛設定對準官方 System One endpoint：
 
 ```yaml
 decision:
-  provider: openai
-  openai:
-    baseUrl: https://api.example.com/v1
-    apiKeyEnv: OPENAI_API_KEY
-    model: your-model-id
+  provider: typesafe
+  typesafe:
+    baseUrl: https://api.typesafe.ai/v1/systemone
+    apiKeyEnv: TYPESAFE_API_KEY
+    model: jev-latest
 ```
+
+對應官方呼叫：
+
+```http
+POST https://api.typesafe.ai/v1/systemone
+Authorization: Bearer <API_KEY>
+Content-Type: application/json
+```
+
+### 其他 provider
+
+| `decision.provider` | 協定 | 用途 |
+| --- | --- | --- |
+| **`typesafe`** | System One | TypeSafe 託管 Jev（建議） |
+| `jeff` | System One | 自架 Jeff |
+| `custom` | System One | 自有 `/v1/systemone` |
+| `openai` | OpenAI 相容 `…/v1/chat/completions` | 其他 chat 閘道 |
+
+`openai` 需自設 `baseUrl` / `apiKeyEnv` / `model`。一般生成模型走 JSON 評分；模型 id 含 `this-that` 時走 yes/no **choice**。
 
 ---
 
@@ -45,6 +56,7 @@ decision:
 
 - **Node.js LTS**（`engines`: `>=20`；請使用你維護中的現行 Active LTS）
 - DSH web profile **0.1.7-rc.2+**
+- 使用建議的 `typesafe` 時需設定 `TYPESAFE_API_KEY`
 
 ---
 
@@ -52,7 +64,7 @@ decision:
 
 ```bash
 dsh plugin --profile web add github:911218sky/dsh-jev-compaction#main
-# 設定 apiKeyEnv 對應的環境變數後重啟 dsh-web
+# 設定 TYPESAFE_API_KEY 後重啟 dsh-web
 ```
 
 ---
