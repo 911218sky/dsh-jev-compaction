@@ -1,0 +1,88 @@
+{
+  "name": "dsh-jev-compaction",
+  "version": "0.2.0",
+  "description": "Semantic pruning of stale tool results for DeepSeek Harness (Jev / System One + OpenAI-compatible decision backends).",
+  "author": "911218sky",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/911218sky/dsh-jev-compaction.git"
+  },
+  "homepage": "https://github.com/911218sky/dsh-jev-compaction#readme",
+  "bugs": "https://github.com/911218sky/dsh-jev-compaction/issues",
+  "type": "module",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./backend": "./lib/backend/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "compatibility.json",
+    "README.md",
+    "README.zh-TW.md",
+    "LICENSE",
+    "NOTICE.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "external": [
+        "@deepseek-ai/dsh-client-ui-slots"
+      ],
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-settings-plugins"
+      ],
+      "platform": "web"
+    }
+  },
+  "dependencies": {
+    "@yadsh/dsh-plugin-kit": "^0.4.0",
+    "@yadsh/dsh-plugin-log": "^0.4.0"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.4",
+    "@deepseek-ai/dsh-compaction": "^0.1.7-rc.2",
+    "@deepseek-ai/dsh-compaction-basic": "^0.1.7-rc.2",
+    "@deepseek-ai/dsh-llm": "^0.1.7-rc.2",
+    "@deepseek-ai/dsh-session": "^0.1.7-rc.2",
+    "@deepseek-ai/schemastery": "^3.18.1",
+    "@deepseek-ai/dsh-client-ui-renderer": "^0.1.7-rc.2",
+    "@deepseek-ai/dsh-client-ui-settings": "^0.1.7-rc.2",
+    "@deepseek-ai/dsh-client-ui-settings-plugins": "^0.1.7-rc.2",
+    "@deepseek-ai/dsh-client-ui-slots": "^0.1.7-rc.2",
+    "@deepseek-ai/dsh-home-paths": "^0.1.7-rc.2",
+    "@deepseek-ai/dsh-tools": "^0.1.7-rc.2",
+    "react": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.0",
+    "@types/react": "~18.3.1",
+    "react": "^18.2.0",
+    "tsdown": "^0.22.2",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "jev",
+    "compaction",
+    "openai-compatible",
+    "context-window"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "prepublishOnly": "npm run build",
+    "test": "vitest run"
+  }
+}
