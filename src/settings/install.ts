@@ -18,7 +18,7 @@ import { JEV_COMPACTION_SETTINGS_NAMESPACE } from "../shared/settings.js";
 
 /** Structural view of the host settings service (registration seam). */
 export interface SettingsInstallFace {
-  installSection(
+  installSection?(
     owner: Context,
     namespace: string,
     schema: unknown,
@@ -29,6 +29,10 @@ export interface SettingsInstallFace {
       validate?(value: unknown): void;
     },
   ): void;
+  configure?(
+    presentation: { auto?: boolean },
+    owner?: unknown,
+  ): () => void;
 }
 
 /** Structural view of the injecting context. */
@@ -63,6 +67,16 @@ export function installJevCompactionSettings(
   target.owner.inject(["settings"], (injected) => {
     const settings = (injected as SettingsInjectedContext).settings;
     if (settings === undefined) return;
+    // 0.2.0 removed installSection; config is driven by cordis.patch.yml +
+    // SettingsForms.configure(). Keep running on the composition entry.
+    if (typeof settings.installSection !== "function") {
+      if (typeof settings.configure === "function") {
+        target.owner.effect(() =>
+          settings.configure!({ auto: true }, target.owner.fiber),
+        );
+      }
+      return;
+    }
     settings.installSection(
       target.owner,
       JEV_COMPACTION_SETTINGS_NAMESPACE,
