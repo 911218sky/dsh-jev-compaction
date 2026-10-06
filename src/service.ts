@@ -271,6 +271,13 @@ export class JevCompactionService extends Service {
         resolveJevCompactionConfig(value);
       },
     });
+
+    // Fiber unload must drop command registration and shaping listeners;
+    // Cordis does not call a custom dispose() on Service subclasses.
+    ctx.effect(
+      () => () => this.dispose(),
+      "dsh-jev-compaction: service lifetime",
+    );
   }
 
   /**

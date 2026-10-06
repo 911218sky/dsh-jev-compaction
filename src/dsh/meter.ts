@@ -1,10 +1,11 @@
 /**
  * Pressure measurement over `ctx.tokenMeter` (SPEC §6.2, §8).
  *
- * The primary pressure decision uses DSH token measurement. The model context
- * window is resolved best-effort through the routed request header; when the
- * adapter does not advertise a capacity, `contextWindow`/`ratio` stay
- * `undefined` and the trigger falls back to absolute token thresholds.
+ * Prefers the durable `session.requestContext().contextWindow` when the host
+ * has logged `request/context`. Falls back to `llm.resolveModelInfo` via
+ * `session.requestHeader().config` when capacity is not yet folded into the
+ * log. When neither is available, `contextWindow`/`ratio` stay undefined and
+ * the trigger uses absolute token thresholds.
  */
 
 import type { Session } from "@deepseek-ai/dsh-session";
@@ -14,24 +15,16 @@ import type {
   TokenMeterLike,
 } from "./types.js";
 
-/** Routed request header view (structural subset of the session API). */
-interface RequestHeaderLike {
-  config: { provider?: string; model?: string };
-}
-
-function routedTarget(
-  session: Session,
-): { provider: string; model: string } | undefined {
-  const header = (
-    session as unknown as {
-      requestHeader?: () => RequestHeaderLike | undefined;
-    }
-  ).requestHeader?.();
-  const provider = header?.config.provider;
-  const model = header?.config.model;
-  if (typeof provider !== "string" || provider.length === 0) return undefined;
-  if (typeof model !== "string" || model.length === 0) return undefined;
-  return { provider, model };
+/** Attach a positive context window and derived ratio onto a snapshot. */
+function applyContextWindow(
+  snapshot: PressureSnapshot,
+  contextWindow: number | undefined,
+): void {
+  if (typeof contextWindow !== "number" || contextWindow <= 0) return;
+  snapshot.contextWindow = contextWindow;
+  if (typeof snapshot.totalTokens === "number") {
+    snapshot.ratio = snapshot.totalTokens / contextWindow;
+  }
 }
 
 /**
@@ -50,19 +43,35 @@ export async function measurePressure(
     estimatedSurfaceTokens: measurement.surfaceTokens,
     totalTokens: measurement.totalTokens,
   };
-  const target = routedTarget(session);
-  if (target !== undefined && llm !== undefined) {
+
+  // Prefer the logged request/context fold (sync, no LLM round-trip).
+  try {
+    applyContextWindow(snapshot, session.requestContext()?.contextWindow);
+    if (snapshot.contextWindow !== undefined) return snapshot;
+  } catch {
+    // Partial mocks or hosts without the fold; fall through.
+  }
+
+  let provider: string | undefined;
+  let model: string | undefined;
+  try {
+    const header = session.requestHeader();
+    provider = header?.config.provider;
+    model = header?.config.model;
+  } catch {
+    // Same fail-open path as a missing header.
+  }
+
+  if (
+    typeof provider === "string" &&
+    provider.length > 0 &&
+    typeof model === "string" &&
+    model.length > 0 &&
+    llm !== undefined
+  ) {
     try {
-      const info = await llm.resolveModelInfo(
-        target.provider,
-        target.model,
-        signal,
-      );
-      const contextWindow = info.context?.contextWindow;
-      if (typeof contextWindow === "number" && contextWindow > 0) {
-        snapshot.contextWindow = contextWindow;
-        snapshot.ratio = measurement.totalTokens / contextWindow;
-      }
+      const info = await llm.resolveModelInfo(provider, model, signal);
+      applyContextWindow(snapshot, info.context?.contextWindow);
     } catch {
       // Capacity stays unknown; the trigger falls back to absolute tokens.
     }
