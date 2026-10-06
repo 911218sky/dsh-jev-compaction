@@ -13,6 +13,7 @@ import {
 } from "@deepseek-ai/dsh-client-ui-primitives";
 import type { SnapshotStore } from "@deepseek-ai/dsh-client-store";
 
+import { JEV_COMPACTION_ENTRY_ID } from "../shared/settings.js";
 import type { FlatSettingsFormScope } from "./config-form-adapter.js";
 import {
   FLAT_FIELD_NAMES,
@@ -20,9 +21,7 @@ import {
   type FlatJevSettings,
 } from "./settings-scope.js";
 
-/** Profile entry id — SettingsForms / configForms key on DSH 0.2. */
-export const JEV_COMPACTION_ENTRY_ID = "dsh-jev-compaction";
-
+export { JEV_COMPACTION_ENTRY_ID };
 function settingsBooleanField(field: string): SettingsFieldSpec {
   return {
     field,

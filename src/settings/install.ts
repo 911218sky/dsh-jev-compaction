@@ -1,22 +1,20 @@
 /**
- * Host-side settings section for the plugin (result-shaping SPEC §33-§34).
+ * Host-side settings wiring for the plugin (result-shaping SPEC §33-§34).
  *
- * The section owns the `jev-compaction` namespace; the browser card in
- * `src/client/` joins it through `settings.plugin.item` keyed by the same
- * string. The composition entry stays the base layer — a detached settings
- * provider falls back to it — and every attach, detach or committed change
- * re-resolves the runtime configuration and re-applies it.
+ * DSH 0.2 replaced `settings.installSection` / SettingsScope with SettingsForms
+ * over the cordis profile entry (`dsh-jev-compaction`). Live values come from
+ * `settings.describe()`; composition `entryConfig` is the fallback base layer.
+ * The browser card joins the same entry through `configForms.get(entryId)`.
  *
- * The section is registered on the Context this plugin was mounted on, so a
- * settings namespace without a live plugin (or vice versa) cannot happen.
+ * Older hosts that still expose `installSection` keep that path.
  */
 
 import type { Context } from "@deepseek-ai/cordis";
 
 import type { JevCompactionConfig } from "../config.js";
-import { JEV_COMPACTION_SETTINGS_NAMESPACE } from "../shared/settings.js";
+import { JEV_COMPACTION_ENTRY_ID } from "../shared/settings.js";
 
-/** Structural view of the host settings service (registration seam). */
+/** Structural view of the host settings service (0.2 SettingsForms + legacy). */
 export interface SettingsInstallFace {
   installSection?(
     owner: Context,
@@ -33,6 +31,12 @@ export interface SettingsInstallFace {
     presentation: { auto?: boolean },
     owner?: unknown,
   ): () => void;
+  describe?(): Array<{
+    ns: string;
+    value?: unknown;
+    user?: unknown;
+    revision?: number;
+  }>;
 }
 
 /** Structural view of the injecting context. */
@@ -57,6 +61,54 @@ export interface SettingsInstallTarget {
 }
 
 /**
+ * Read the merged SettingsForms document for this plugin's cordis entry.
+ * Falls back to the composition entry when describe is missing or empty.
+ */
+export function readLiveJevConfig(
+  settings: SettingsInstallFace | undefined,
+  fallback: JevCompactionConfig,
+): JevCompactionConfig {
+  const descriptor = settings
+    ?.describe?.()
+    .find((entry) => entry.ns === JEV_COMPACTION_ENTRY_ID);
+  const value = descriptor?.value;
+  if (value !== undefined && typeof value === "object" && value !== null) {
+    return value as JevCompactionConfig;
+  }
+  return fallback;
+}
+
+/**
+ * Install live settings for DSH 0.2 SettingsForms: presentation + describe()
+ * as the config source + reapply on `settings/document-updated`.
+ */
+function installSettingsForms(
+  target: SettingsInstallTarget,
+  settings: SettingsInstallFace,
+): void {
+  if (typeof settings.configure === "function") {
+    target.owner.effect(
+      () => settings.configure!({ auto: true }, target.owner.fiber),
+      "dsh-jev-compaction: settings presentation",
+    );
+  }
+
+  target.setSource(() => readLiveJevConfig(settings, target.entryConfig));
+  target.onChange();
+
+  const events = target.owner as unknown as {
+    on?(event: string, handler: (ns: unknown) => void): () => void;
+  };
+  if (typeof events.on !== "function") return;
+  target.owner.effect(() => {
+    const stop = events.on!("settings/document-updated", (ns) => {
+      if (String(ns) === JEV_COMPACTION_ENTRY_ID) target.onChange();
+    });
+    return stop;
+  }, "dsh-jev-compaction: settings watch");
+}
+
+/**
  * Install the plugin's settings section. Safe when the host exposes no
  * settings service (older profiles, headless probes): the plugin keeps
  * running on its composition config.
@@ -67,19 +119,16 @@ export function installJevCompactionSettings(
   target.owner.inject(["settings"], (injected) => {
     const settings = (injected as SettingsInjectedContext).settings;
     if (settings === undefined) return;
-    // 0.2.0 removed installSection; config is driven by cordis.patch.yml +
-    // SettingsForms.configure(). Keep running on the composition entry.
+
+    // DSH 0.2+: SettingsForms over the cordis entry (no installSection).
     if (typeof settings.installSection !== "function") {
-      if (typeof settings.configure === "function") {
-        target.owner.effect(() =>
-          settings.configure!({ auto: true }, target.owner.fiber),
-        );
-      }
+      installSettingsForms(target, settings);
       return;
     }
+
     settings.installSection(
       target.owner,
-      JEV_COMPACTION_SETTINGS_NAMESPACE,
+      JEV_COMPACTION_ENTRY_ID,
       target.schema,
       target.entryConfig,
       {

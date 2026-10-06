@@ -11,18 +11,17 @@ import type {} from "@deepseek-ai/dsh-client-ui-renderer/client";
 import type {} from "@deepseek-ai/dsh-client-ui-settings/client";
 import type {} from "./slots.js";
 
-import { JEV_COMPACTION_SETTINGS_NAMESPACE } from "../shared/settings.js";
+import {
+  JEV_COMPACTION_ENTRY_ID,
+  JEV_COMPACTION_SETTINGS_NAMESPACE,
+} from "../shared/settings.js";
 import {
   flatSettingsFormScope,
   type ConfigFormLike,
 } from "./config-form-adapter.js";
 import type { JevCompactionConfig } from "../config.js";
 import { JevCompactionCard } from "./JevCompactionCard.js";
-import {
-  JevCompactionCardController,
-  JEV_COMPACTION_ENTRY_ID,
-} from "./jev-card-controller.js";
-
+import { JevCompactionCardController } from "./jev-card-controller.js";
 /** Required services (cordis fiber inject). */
 export const inject = ["slots", "configForms"] as const;
 

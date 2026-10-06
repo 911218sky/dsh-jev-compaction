@@ -12,6 +12,7 @@
 import { Service } from "@deepseek-ai/cordis";
 import type { Context } from "@deepseek-ai/cordis";
 import type { Session } from "@deepseek-ai/dsh-session";
+import type { HostLoggerLike } from "@yadsh/dsh-plugin-log";
 import {
   JevCompactionConfigSchema,
   resolveJevCompactionConfig,
@@ -51,7 +52,12 @@ import {
 } from "./planner/plan.js";
 import { decideAction, type CandidateScores } from "./planner/policy.js";
 import { meetsSavingsGate } from "./planner/savings.js";
-import { JEV_EVENTS, jevLogger } from "./observability/logging.js";
+import {
+  applyJevLogLevel,
+  configureJevLogger,
+  JEV_EVENTS,
+  jevLogger,
+} from "./observability/logging.js";
 import { registerJevCompactCommand } from "./commands/jev-compact.js";
 import { installJevCompactionSettings } from "./settings/install.js";
 import { ResultShapingSubsystem } from "./result-shaping/index.js";
@@ -100,6 +106,19 @@ export interface JevRunReport {
   /** Set when a manual mutation request was queued for the next step. */
   readonly queuedForNextStep?: boolean;
   readonly plan?: JevCompactionPlan;
+}
+
+/**
+ * Fail-open mapping when the decision backend throws (SPEC §18.4).
+ * Chat continues; pruning is skipped with `jev-failed`.
+ */
+export function decisionFailureSkip(
+  error: unknown,
+): { readonly skipped: "jev-failed"; readonly error: string } {
+  return {
+    skipped: "jev-failed",
+    error: error instanceof Error ? error.message : String(error),
+  };
 }
 
 interface SessionState {
@@ -177,6 +196,13 @@ export class JevCompactionService extends Service {
     this.entryConfig = config;
     this.configSource = () => this.entryConfig;
     this.resolvedConfig = resolveJevCompactionConfig(config);
+    // Bind Cordis host logger as the console mirror before any events fire,
+    // and honor diagnostics.logLevel from the initial composition config.
+    const hostLogger = (ctx as unknown as { logger?: HostLoggerLike }).logger;
+    configureJevLogger({
+      ...(hostLogger !== undefined ? { host: hostLogger } : {}),
+      level: this.resolvedConfig.diagnostics.logLevel,
+    });
     this.tokenMeter = (
       ctx as unknown as { tokenMeter: TokenMeterLike }
     ).tokenMeter;
@@ -266,6 +292,7 @@ export class JevCompactionService extends Service {
    * every successful re-resolve, including the initial install.
    */
   protected onConfigChanged(): void {
+    applyJevLogLevel(this.resolvedConfig.diagnostics.logLevel);
     this.shaping.onConfigChanged();
     this.warnOnMissingCredential();
   }
@@ -585,9 +612,9 @@ export class JevCompactionService extends Service {
         }
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
+      const failure = decisionFailureSkip(error);
       if (!signal.aborted) this.reportFailure(error, sessionId);
-      return { ...skip("jev-failed"), error: message };
+      return { ...skip(failure.skipped), error: failure.error };
     }
 
     // Policy + rendering (SPEC §13, §14).
@@ -707,9 +734,9 @@ export class JevCompactionService extends Service {
       }
     } catch (error: unknown) {
       if (error instanceof SurfaceChangedError) return skip("busy");
-      const message = error instanceof Error ? error.message : String(error);
+      const failure = decisionFailureSkip(error);
       this.reportFailure(error, sessionId);
-      return { ...skip("jev-failed"), error: message };
+      return { ...skip(failure.skipped), error: failure.error };
     }
 
     // Cooldown accounting only for applied automatic runs.

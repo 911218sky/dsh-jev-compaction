@@ -43,6 +43,15 @@ export const ARCHIVE_HOME_SEGMENTS: readonly string[] = Object.freeze([
 /** Largest entry the archive will store; bigger originals are not archived. */
 export const MAX_ARCHIVE_ENTRY_BYTES = 64 * 1024 * 1024;
 
+/** Throw when a serialized archive payload exceeds the hard entry cap. */
+export function assertWithinArchiveEntryLimit(byteLength: number): void {
+  if (byteLength > MAX_ARCHIVE_ENTRY_BYTES) {
+    throw new Error(
+      `archive entry of ${byteLength} bytes exceeds the ${MAX_ARCHIVE_ENTRY_BYTES}-byte limit`,
+    );
+  }
+}
+
 /** Resolve the archive root: explicit config first, harness home otherwise. */
 export function resolveArchiveRoot(
   config: ResolvedJevCompactionConfig,
@@ -71,11 +80,7 @@ export class LocalResultArchive implements OriginalResultArchive {
   ): Promise<ArchiveRef> {
     const serialized = JSON.stringify(entry);
     const bytes = Buffer.byteLength(serialized, "utf8");
-    if (bytes > MAX_ARCHIVE_ENTRY_BYTES) {
-      throw new Error(
-        `archive entry of ${bytes} bytes exceeds the ${MAX_ARCHIVE_ENTRY_BYTES}-byte limit`,
-      );
-    }
+    assertWithinArchiveEntryLimit(bytes);
     const path = entryPath(this.root, entry.contentHash);
     if (await this.exists(path)) return entry.contentHash;
     await mkdir(dirname(path), { recursive: true });

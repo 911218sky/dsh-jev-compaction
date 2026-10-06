@@ -23,6 +23,10 @@ import type {
 } from "./jev-card-controller.js";
 import { formatBytes, triggerSummary } from "./format.js";
 import type { FlatFieldName } from "./settings-scope.js";
+import {
+  ARCHIVE_ENTRY_LIMIT_HINT,
+  decisionBackendDiag,
+} from "./decision-diag.js";
 
 export const CARD_DESCRIPTION =
   "Semantic result shaping and historical context compaction powered by Jev.";
@@ -310,6 +314,7 @@ export function JevCompactionCard(props: JevCompactionCardProps): ReactElement |
           hint: "Absolute path, or empty for the harness home. Changing it needs a restart.",
           placeholder: "default: $DSH_HOME/data/dsh-jev-compaction/originals",
         })}
+        <Hint>{ARCHIVE_ENTRY_LIMIT_HINT}</Hint>
       </Section>
 
       <Section title="Historical compaction">
@@ -353,6 +358,16 @@ export function JevCompactionCard(props: JevCompactionCardProps): ReactElement |
           Scoring backend for semantic retention. Use openai for any
           OpenAI-compatible chat API, or a System One endpoint.
         </Hint>
+        {(() => {
+          const provider = state.provider.text.trim() || DISPLAY_DEFAULTS.provider;
+          const apiKeyEnv = state.apiKeyEnv.text;
+          const diag = decisionBackendDiag(provider, apiKeyEnv, enabled);
+          return diag.severity === "warn" ? (
+            <Warning>{diag.message}</Warning>
+          ) : (
+            <Hint>{diag.message}</Hint>
+          );
+        })()}
         {selectField("provider", state, props, {
           label: "Provider",
           choices: ["openai", "typesafe", "jeff", "custom"],
