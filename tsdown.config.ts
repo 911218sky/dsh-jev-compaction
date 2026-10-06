@@ -43,14 +43,6 @@ export default defineConfig([
     sourcemap: true,
     deps: {
       neverBundle: ['react', 'react/jsx-runtime', 'react-dom'],
-      // Bundle @yadsh kit into the client so the host need not resolve it.
-      alwaysBundle: (id: string) =>
-        id === '@yadsh/dsh-plugin-kit' ||
-        id.startsWith('@yadsh/dsh-plugin-kit/') ||
-        (!id.startsWith('@deepseek-ai/') &&
-          id !== 'react' &&
-          id !== 'react/jsx-runtime' &&
-          id !== 'react-dom'),
     },
     outputOptions: {
       entryFileNames: 'client.js',

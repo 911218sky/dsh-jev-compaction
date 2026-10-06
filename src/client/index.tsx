@@ -1,72 +1,62 @@
 /**
  * Browser entry of the Jev Compaction settings card.
  *
- * The ModuleLoader registration (`window.__ModuleLoader__.load({ id, factory })`
- * with the full package name) is produced by the tsdown banner; this module
- * binds the plugin's settings namespace and registers the card in the shared
- * `settings.plugin.item` slot. Everything the card shows comes from the
- * settings scope, so the plugin needs no Remote namespace — and no API secret
- * ever crosses to the browser: the card edits the *name* of the environment
- * variable holding the key and only displays whether the Host can resolve it.
+ * Binds the plugin's settings namespace and registers the card in the shared
+ * `settings.plugin.item` slot via DSH SettingsForm primitives — no plugin-kit
+ * CSS or immediate-write controls.
  */
 
 import type { Context } from "@deepseek-ai/cordis";
 import type {} from "@deepseek-ai/dsh-client-ui-renderer/client";
 import type {} from "@deepseek-ai/dsh-client-ui-settings/client";
-import type {} from "@deepseek-ai/dsh-client-ui-settings-plugins/client";
-import type {} from "@deepseek-ai/dsh-client-ui-slots";
-import { registerSettingsCard } from "@yadsh/dsh-plugin-kit/client";
+import type {} from "./slots.js";
 
 import { JEV_COMPACTION_SETTINGS_NAMESPACE } from "../shared/settings.js";
-import { JevCompactionCard } from "./card.js";
-import { styles } from "./styles.js";
+import {
+  flatSettingsFormScope,
+  type ConfigFormLike,
+} from "./config-form-adapter.js";
+import type { JevCompactionConfig } from "../config.js";
+import { JevCompactionCard } from "./JevCompactionCard.js";
+import {
+  JevCompactionCardController,
+  JEV_COMPACTION_ENTRY_ID,
+} from "./jev-card-controller.js";
 
-/** Package name: the style-tag key and the card's own plugin identity. */
-export const CLIENT_PLUGIN_NAME = "dsh-jev-compaction";
-
-/**
- * Client services this module reads. The client runtime resolves only
- * declared dependencies, so they must be listed here as well as in the
- * `dsh.client.inject` manifest.
- */
+/** Required services (cordis fiber inject). */
 export const inject = ["slots", "configForms"] as const;
 
-function noop(): void {}
-
-/** Structural view of the client context this entry needs. */
+/** Structural view of the client services this entry needs. */
 interface ClientFace {
-  readonly slots: {
+  slots: {
     inject(slotName: string, factory: () => unknown): () => void;
     register(options: unknown, component: unknown): () => void;
   };
-  readonly configForms: {
-    get(entryId: string): unknown;
+  configForms?: {
+    get(entryId: string): ConfigFormLike<JevCompactionConfig> | undefined;
   };
 }
 
-/** Bind the settings namespace and register the native settings card. */
-export function apply(ctx: Context): () => void {
-  const face = ctx as unknown as Partial<ClientFace>;
-  // Headless probes and older profiles may lack the binder; rendering no card
-  // beats crashing the page during module load (AGENTS.md: no namespace, no
-  // card).
-  const forms = face.configForms;
-  if (
-    forms === undefined ||
-    typeof forms.get !== "function" ||
-    face.slots === undefined
-  ) {
-    return noop;
-  }
+/** Bind the settings namespace and register the settings card. */
+export function apply(ctx: Context): void {
+  const face = ctx as unknown as ClientFace;
+  const form = face.configForms?.get?.(JEV_COMPACTION_ENTRY_ID);
+  if (form === undefined || face.slots === undefined) return;
 
-  // 0.1.7+: configForms.get(entryId) — entry id matches cordis patch id.
-  const scope = forms.get("dsh-jev-compaction");
+  const controller = new JevCompactionCardController(flatSettingsFormScope(form));
+  ctx.effect(
+    () => () => controller.dispose(),
+    "dsh-jev-compaction: card controller lifetime",
+  );
 
-  return registerSettingsCard(face as never, {
-    key: JEV_COMPACTION_SETTINGS_NAMESPACE,
-    pluginName: CLIENT_PLUGIN_NAME,
-    styles,
-    component: JevCompactionCard,
-    inject: () => ({ scope }),
+  face.slots.inject("settings.plugin.item", function* () {
+    yield face.slots.register(
+      {
+        name: "settings.plugin.item",
+        key: JEV_COMPACTION_SETTINGS_NAMESPACE,
+        inject: () => controller.inject(),
+      },
+      JevCompactionCard,
+    );
   });
 }
