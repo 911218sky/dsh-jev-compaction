@@ -37,7 +37,12 @@ export type PostExecuteListener = (
 ) => Promise<PostToolDecision>;
 
 export interface PostExecuteOptions {
-  readonly shaper: ImmediateResultShaper;
+  /**
+   * Live shaper lookup: must not close over a fixed instance, so a settings
+   * change that rebuilds the archive/shaper (e.g. `archive.rootPath`) is
+   * visible on the next tool result without re-registering the listener.
+   */
+  readonly getShaper: () => ImmediateResultShaper;
   readonly readConfig: () => ResolvedJevCompactionConfig;
   /** Reserves this turn's request budget for one execution. */
   readonly reserveBudget: (exec: ToolExecution, chars: number) => boolean;
@@ -55,7 +60,7 @@ const OWN_TOOL_PREFIX = "jev_compaction";
 export function createPostExecuteListener(
   options: PostExecuteOptions,
 ): PostExecuteListener {
-  const { shaper, readConfig, reserveBudget, goalFor, onSkip } = options;
+  const { getShaper, readConfig, reserveBudget, goalFor, onSkip } = options;
 
   return async (exec, result, next) => {
     // Run the rest of the chain first: it owns the block/replace decisions.
@@ -90,7 +95,7 @@ export function createPostExecuteListener(
       const sessionId =
         session === undefined ? undefined : String(session.header.id);
 
-      const outcome = await shaper.maybeShape({
+      const outcome = await getShaper().maybeShape({
         callId: String(exec.callId),
         toolName: exec.name,
         ...(sessionId === undefined ? {} : { sessionId }),

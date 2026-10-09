@@ -146,14 +146,23 @@ function countAction(
 }
 
 
-function createDecisionBackend(
+/**
+ * Live decision router: endpoint／key／timeout already refresh via
+ * `readConfig` inside each client; this facade also honors a live change of
+ * `decision.provider` (openai ↔ System One) without rebuilding the plugin.
+ */
+export function createDecisionBackend(
   readConfig: () => ResolvedJevCompactionConfig,
 ): SystemOneBackend {
-  const provider = readConfig().decision.provider;
-  if (provider === "openai") {
-    return new OpenAIChatDecisionClient(readConfig);
-  }
-  return new SystemOneClient(readConfig);
+  const openai = new OpenAIChatDecisionClient(readConfig);
+  const systemOne = new SystemOneClient(readConfig);
+  return {
+    score(state, questions, signal) {
+      const backend =
+        readConfig().decision.provider === "openai" ? openai : systemOne;
+      return backend.score(state, questions, signal);
+    },
+  };
 }
 
 export class JevCompactionService extends Service {
@@ -351,7 +360,14 @@ export class JevCompactionService extends Service {
           turn: payload.turn,
           signal: payload.signal,
         });
-        if (report.skipped === "busy") state.pendingManual = true;
+        // Transient skips: keep the queued request for a later open turn.
+        // Do not restore empty-plan / disabled / no-candidates (would loop).
+        if (
+          report.skipped === "busy" ||
+          report.skipped === "jev-failed"
+        ) {
+          state.pendingManual = true;
+        }
       } else {
         await this.maybeAutoCompact(
           payload.agent,

@@ -131,6 +131,10 @@ function withTimeout(
 
 function delay(ms: number, signal: AbortSignal | undefined): Promise<void> {
   return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new JevTransportError("cancelled"));
+      return;
+    }
     const timer = setTimeout(resolve, ms);
     if (signal !== undefined) {
       signal.addEventListener(

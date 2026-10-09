@@ -91,7 +91,7 @@ export class ResultShapingSubsystem {
       host.on(
         "tools/post-execute",
         createPostExecuteListener({
-          shaper: this.shaper,
+          getShaper: () => this.shaper,
           readConfig: this.deps.readConfig,
           reserveBudget: (exec, chars) => {
             const session = (exec as unknown as ExecLike).agent?.session;
