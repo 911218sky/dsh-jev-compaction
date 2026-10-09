@@ -1,5 +1,5 @@
 /**
- * Jev classification of one result's runs (result-shaping SPEC §18).
+ * Jev classification of one result's runs.
  *
  * The immediate shaper asks different questions than historical compaction:
  * not "is this historical result still needed" but "is this group of adjacent
@@ -83,7 +83,7 @@ export function buildShapingState(input: ShapingRequestInput): JevState {
 /**
  * Two yes/no questions per run: is this block routine repetition, and would
  * removing it materially reduce the ability to make the correct next
- * decision. The local policy turns the pair into one decision (§19).
+ * decision. The local policy turns the pair into one decision.
  */
 export function buildRunQuestions(
   runs: readonly LineRun[],

@@ -1,5 +1,5 @@
 /**
- * Backend-mode entry (`dsh-jev-compaction/backend`, SPEC §6.6): mount
+ * Backend-mode entry (`dsh-jev-compaction/backend`): mount
  * this default export as the profile's compaction engine instead of
  * `@deepseek-ai/dsh-compaction-basic`. Semantic Jev pruning runs at the early
  * threshold; the inherited basic engine provides the conventional summary

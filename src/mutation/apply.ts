@@ -1,5 +1,5 @@
 /**
- * Plan application (SPEC §16).
+ * Plan application.
  *
  * The durable log is append-only: validate everything first, revalidate the
  * surface immediately before the first append, then land each replacement

@@ -1,5 +1,5 @@
 /**
- * Mutation plan assembly (SPEC §16, §20).
+ * Mutation plan assembly.
  *
  * The plan is the only artifact the mutation layer consumes: candidate,
  * decision, action, rendered replacement text and size accounting, in
@@ -33,7 +33,7 @@ export interface JevCompactionPlan {
 
 /**
  * Assemble the plan. Items keep the snapshotted surface order; mutation
- * ordering follows that order at apply time (SPEC §16.1).
+ * ordering follows that order at apply time.
  */
 export function buildPlan(
   surfaceSnapshot: SurfaceSnapshot,

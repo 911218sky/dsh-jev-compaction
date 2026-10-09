@@ -32,7 +32,7 @@ export interface JevQuestion {
 export type JevAnswers = Map<string, number>;
 
 /**
- * The backend interface every decision engine implements (SPEC §18). The
+ * The backend interface every decision engine implements. The
  * provider-neutral name is deliberate: hosted TypeSafe Jev, a self-hosted
  * Jeff server, and any other System One-compatible endpoint all implement
  * this one contract; switching is configuration, not code.

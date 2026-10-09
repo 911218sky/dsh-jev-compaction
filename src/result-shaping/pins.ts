@@ -1,5 +1,5 @@
 /**
- * Deterministic pins (result-shaping SPEC §17).
+ * Deterministic pins.
  *
  * A pin is a line that must survive shaping no matter what the classifier
  * says: the head and the tail of the output, and every line that looks like a

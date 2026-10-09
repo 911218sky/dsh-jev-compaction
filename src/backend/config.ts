@@ -1,9 +1,9 @@
 /**
- * Configuration of the backend-mode engine entry (SPEC §38 Track B, §6.6).
+ * Configuration of the backend-mode engine entry.
  *
  * The engine entry accepts the full companion plugin configuration (the early
- * semantic-prune threshold is `trigger.contextRatio`, called `jevPruneRatio`
- * in the SPEC) plus the summary-side knobs it forwards to the inherited
+ * semantic-prune threshold is `trigger.contextRatio`, also known as
+ * `jevPruneRatio`) plus the summary-side knobs it forwards to the inherited
  * `BasicCompactionEngine` — `summaryRatio` maps to basic's
  * `thresholdRatio`. Validation is strict and happens in
  * `resolveJevEngineConfig` at construction; the cordis `Config` schema of the

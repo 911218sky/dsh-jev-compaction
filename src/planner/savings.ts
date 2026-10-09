@@ -1,5 +1,5 @@
 /**
- * Minimum savings gate (SPEC §20): do not rewrite dozens of durable events
+ * Minimum savings gate: do not rewrite dozens of durable events
  * to save trivial context. The estimate uses Unicode code points, matching
  * the mutation renderer's measurement.
  */

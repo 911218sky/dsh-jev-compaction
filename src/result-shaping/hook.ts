@@ -1,18 +1,18 @@
 /**
- * The `tools/post-execute` listener (result-shaping SPEC §7, §8, §63).
+ * The `tools/post-execute` listener.
  *
  * The shaper is an *outer post-processor*, not a filter: it calls `next()`
  * first so every later listener gets to block or replace the result, and only
  * then does it consider shaping whatever survived.
  *
- *   our listener → next() → downstream decision
- *                            ├─ block            → returned untouched
- *                            ├─ accept(value=X)  → returned untouched: the
- *                            │                     renderer for X has not run
- *                            │                     yet, so there is nothing
- *                            │                     to shape
- *                            └─ accept(content)  → shaped, and the accepted
- *                                                  decision is preserved
+ * our listener → next() → downstream decision
+ * ├─ block → returned untouched
+ * ├─ accept(value=X) → returned untouched: the
+ * │ renderer for X has not run
+ * │ yet, so there is nothing
+ * │ to shape
+ * └─ accept(content) → shaped, and the accepted
+ * decision is preserved
  *
  * Returning `{ kind: 'accept', content }` before `next()` would stop the other
  * post-execute policies from running, and a throwing listener turns a
@@ -80,7 +80,7 @@ export function createPostExecuteListener(
       const config = readConfig();
       if (!config.resultShaping.enabled) return downstream;
       // Nested code-mode/PTC dispatches never reach the model as their own
-      // result: shaping them would be invisible at best (SPEC §28).
+      // result: shaping them would have no effect for the model.
       if (exec.parent !== undefined) {
         onSkip("nested-dispatch", { tool: exec.name });
         return downstream;

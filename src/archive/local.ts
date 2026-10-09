@@ -1,9 +1,9 @@
 /**
- * Local content-addressed archive (result-shaping SPEC §23-§24).
+ * Local content-addressed archive.
  *
  * Layout, one JSON file per distinct payload:
  *
- *   <root>/sha256-<hex>.json
+ * <root>/sha256-<hex>.json
  *
  * Writes are atomic (temp file + rename) and bounded in size; reads verify the
  * hash, so a truncated or edited entry is reported as absent rather than
@@ -33,7 +33,7 @@ import type {
   OriginalResultArchive,
 } from "./types.js";
 
-/** Default subdirectory under the harness home (SPEC §23). */
+/** Default subdirectory under the harness home. */
 export const ARCHIVE_HOME_SEGMENTS: readonly string[] = Object.freeze([
   "data",
   "dsh-jev-compaction",
@@ -99,7 +99,7 @@ export class LocalResultArchive implements OriginalResultArchive {
         return null;
       }
       // Integrity: an entry that does not hash back to its own name is not
-      // evidence of anything, so report it as missing.
+      // valid content, so treat it as missing.
       if (contentRef(parsed.content) !== parsed.contentHash) return null;
       return parsed;
     } catch {

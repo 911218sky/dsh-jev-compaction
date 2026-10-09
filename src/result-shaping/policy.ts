@@ -1,5 +1,5 @@
 /**
- * Local retention policy (result-shaping SPEC §19).
+ * Local retention policy.
  *
  * Jev proposes, this module disposes. A run collapses only when the two
  * probabilities are decisively apart: the block must be routine with at least

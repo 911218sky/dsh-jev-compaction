@@ -5,12 +5,12 @@
  * contract exposed through the Cordis `Config` convention on the service;
  * `resolveJevCompactionConfig` normalizes raw config into fully defaulted,
  * clamped values, so the planner and the Jev client never see optional
- * fields or unsafe limits. Field semantics follow the plugin SPEC §22.
+ * fields or unsafe limits. Field semantics follow the plugin config docs.
  */
 
 import z from "@deepseek-ai/schemastery";
 
-/** Endpoint presets shipped with the plugin (SPEC §18, §26.3). */
+/** Endpoint presets shipped with the plugin. */
 export const SYSTEM_ONE_PRESETS = {
   /** OpenAI-compatible chat/completions (any gateway: OpenAI, LiteLLM, vLLM, …). */
   openai: {
@@ -24,7 +24,7 @@ export const SYSTEM_ONE_PRESETS = {
     model: "jev-latest",
   },
   jeff: {
-    // The System One route, exactly as the typesafe preset spells it: the
+    // The System One route, matching the typesafe preset: the
     // client POSTs to this URL as it stands, so a bare host would answer 404.
     baseUrl: "http://localhost:8000/v1/systemone",
     apiKeyEnv: "JEFF_API_KEY",
@@ -45,7 +45,7 @@ export const SYSTEM_ONE_PROVIDERS: readonly SystemOneProvider[] = [
   "custom",
 ];
 
-/** Per-provider endpoint overrides (SPEC §22 `decision.<provider>`). */
+/** Per-provider endpoint overrides (`decision.<provider>`). */
 export interface SystemOneProviderOverride {
   readonly baseUrl?: string;
   readonly apiKeyEnv?: string;
@@ -53,7 +53,7 @@ export interface SystemOneProviderOverride {
 }
 
 /**
- * Tools shaped by default (SPEC §11.1 of the result-shaping SPEC). Only
+ * Tools shaped by default. Only
  * command-like tools whose output is bulk, line-oriented and cheaply
  * reproducible: everything else — file reads, diffs, searches, structured
  * business tools, subagent results — may carry unique evidence that cannot be
@@ -68,7 +68,7 @@ export const DEFAULT_SHAPE_TOOLS: readonly string[] = Object.freeze([
   "run_tests",
 ]);
 
-/** Result-shaping category of one collapsed run (SPEC §18). */
+/** Result-shaping category of one collapsed run. */
 export const SHAPING_KINDS = [
   "routine_progress",
   "summary",
@@ -80,7 +80,7 @@ export const SHAPING_KINDS = [
 
 export type ShapingKind = (typeof SHAPING_KINDS)[number];
 
-/** Archive failure policy (SPEC §24). */
+/** Archive failure policy. */
 export const ARCHIVE_FAILURE_POLICIES = [
   "keep-original",
   "shape-anyway",
@@ -88,12 +88,12 @@ export const ARCHIVE_FAILURE_POLICIES = [
 
 export type ArchiveFailurePolicy = (typeof ARCHIVE_FAILURE_POLICIES)[number];
 
-/** Raw user-facing configuration (SPEC §22). */
+/** Raw user-facing configuration. */
 export interface JevCompactionConfig {
   /** Master switch; when false the plugin listens but never acts. */
   readonly enabled?: boolean;
   /**
-   * Decision backend selection (SPEC §18). The provider preset picks the
+   * Decision backend selection. The provider preset picks the
    * endpoint, key variable and model; `decision.<provider>` overrides
    * individual preset fields. `custom` requires an explicit `baseUrl`.
    */
@@ -181,9 +181,9 @@ export interface JevCompactionConfig {
     readonly minSavingsRatio?: number;
   };
   /**
-   * Immediate semantic shaping of large tool outputs at `tools/post-execute`
-   * (result-shaping SPEC §10-§21): runs before the durable `tool/result` is
-   * persisted, so it is opt-in and archives the original by default.
+   * Immediate semantic shaping of large tool outputs at `tools/post-execute`:
+   * runs before the durable `tool/result` is persisted, so it is opt-in and
+   * archives the original by default.
    */
   readonly resultShaping?: {
     /** Master switch; off by default — this path changes durable content. */
@@ -224,9 +224,9 @@ export interface JevCompactionConfig {
     readonly maxInputCharsPerTurn?: number;
   };
   /**
-   * Plugin-owned archive of the pre-shaping rendered result (result-shaping
-   * SPEC §22-§25). Shaping happens before DSH persists the result, so without
-   * an archive the original is not recoverable from session replay.
+   * Plugin-owned archive of the pre-shaping rendered result. Shaping happens
+   * before DSH persists the result, so without an archive the original is not
+   * recoverable from session replay.
    */
   readonly archive?: {
     /** Persist originals before shaping. */
@@ -352,7 +352,7 @@ export interface ResolvedJevCompactionConfig {
   };
 }
 
-/** Defaults mirror the SPEC §22 suggested values. */
+/** Defaults mirror thesuggested values. */
 export const DEFAULTS: ResolvedJevCompactionConfig = Object.freeze({
   enabled: true,
   decision: Object.freeze({ provider: "openai" as const }),
@@ -517,7 +517,7 @@ function legacyOverride(
  * Resolve the decision backend endpoint: pick the provider preset, layer the
  * `decision.<provider>` overrides on top, then let an explicitly configured
  * legacy flat `jev` block override one-for-one. `provider: custom` must carry
- * an explicit `baseUrl` — a misconfigured endpoint must fail loudly at
+ * an explicit `baseUrl` — a misconfigured endpoint must fail early at
  * startup, not silently prune or score against the wrong service.
  */
 function resolveEndpoint(raw: JevCompactionConfig): {
@@ -556,7 +556,7 @@ function resolveEndpoint(raw: JevCompactionConfig): {
 /**
  * Normalize raw config: apply defaults, clamp ranges, and enforce the
  * threshold ordering. Throws on non-finite scalars and inverted thresholds —
- * a misconfigured safety threshold must fail loudly at startup, not silently
+ * a misconfigured safety threshold must fail early at startup, not silently
  * prune or silently do nothing.
  */
 export function resolveJevCompactionConfig(

@@ -1,5 +1,5 @@
 /**
- * Eligibility and trigger policy (result-shaping SPEC §11, §12, §27).
+ * Eligibility and trigger policy.
  *
  * Everything here is deterministic and cheap: it runs on the tool-execution
  * critical path, before any classification request is paid for. A result must
@@ -15,7 +15,7 @@ import type { ShapeSkipReason } from "./metrics.js";
 /**
  * Markers left by DSH's own result-bounding layers. Shaping after one of them
  * would fight the built-in behaviour and could rewrite its locator into a
- * normal-looking preview (SPEC §27).
+ * normal-looking preview.
  */
 const FOREIGN_MARKERS: readonly string[] = Object.freeze([
   // @deepseek-ai/dsh-spill-policy stores the full result elsewhere and leaves

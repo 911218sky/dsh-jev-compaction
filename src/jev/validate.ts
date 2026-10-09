@@ -1,5 +1,5 @@
 /**
- * Strict response validation (SPEC §18.4).
+ * Strict response validation.
  *
  * Any malformed batch fails safe: missing keys, duplicate keys, non-finite
  * or out-of-range probabilities and unknown shapes all reject the batch —

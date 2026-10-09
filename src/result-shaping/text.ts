@@ -1,6 +1,5 @@
 /**
- * Text extraction from a tool result's content blocks (result-shaping SPEC
- * §13).
+ * Text extraction from a tool result's content blocks.
  *
  * The shaper only ever rewrites text. Non-text blocks (images, files, tool
  * results) are preserved in place and in order, and a result whose text cannot
@@ -18,10 +17,10 @@ export interface ContentBlockLike {
  * How the extracted text maps back onto the content array:
  *
  * - `single`: exactly one text block, whatever surrounds it — the shaped text
- *   replaces that block and every other block keeps its position;
+ * replaces that block and every other block keeps its position;
  * - `uniform`: every block is text — the shaped text replaces them with one
- *   text block at the first one's position (concatenation is unambiguous, and
- *   it is what the model reads either way).
+ * text block at the first one's position (concatenation is unambiguous, and
+ * it is what the model reads either way).
  */
 export type TextLayout = "single" | "uniform";
 

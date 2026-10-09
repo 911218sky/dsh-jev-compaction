@@ -1,5 +1,5 @@
 /**
- * Structured plugin events (SPEC §27).
+ * Structured plugin events.
  *
  * Keeps `@yadsh/dsh-plugin-log` for fail-open file logs under `$DSH_HOME/logs`,
  * redaction, and structured event codes. When a Cordis host logger is available,

@@ -1,5 +1,5 @@
 /**
- * Jev state builder (SPEC §11).
+ * Jev state builder.
  *
  * Produces the bounded semantic representation of the conversation: user and
  * assistant intent stays represented (bounded, privacy-gated), full
@@ -158,7 +158,7 @@ export function buildState(
 }
 
 /**
- * Progressive fitting (SPEC §19): shrink the state deterministically until it
+ * Progressive fitting: shrink the state deterministically until it
  * fits `maxStateTokens`, oldest-first and metadata-first, never dropping the
  * goal. Stages: abridge long texts → drop oldest tool metadata → drop oldest
  * assistant entries → keep only the goal and the newest few entries. Throws

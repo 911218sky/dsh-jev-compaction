@@ -1,5 +1,5 @@
 /**
- * DSH surface mechanics, isolated behind this compat layer (SPEC §24).
+ * DSH surface mechanics, isolated behind this compat layer.
  *
  * Reads the current surface, indexes tool calls, validates snapshot
  * freshness, and constructs legal single-node `tool/result` replacements.

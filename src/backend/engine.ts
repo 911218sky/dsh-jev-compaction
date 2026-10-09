@@ -1,5 +1,5 @@
 /**
- * Backend-mode compaction engine (SPEC §6.6, §38 Track B): the plugin
+ * Backend-mode compaction engine: the plugin
  * provides `ctx.compaction` by extending `BasicCompactionEngine`, so
  * `/compact` (`dsh-command-compact`), overflow recovery, the deterministic
  * size pruner, the compaction event protocol, and balanced summary-range
@@ -9,16 +9,16 @@
  *
  * ```text
  * agent/pre-step (waterfall, per step)
- *   ├─ nested JevCompactionService (prepended listener)
- *   │     armed /jev-compact plan → applies in the open turn
- *   │     auto semantic prune at trigger.contextRatio (jevPruneRatio)
- *   └─ inherited basic listener
- *         compactIfNeeded at summaryRatio → optional size pruner → summary
+ * ├─ nested JevCompactionService (prepended listener)
+ * │ armed /jev-compact plan → applies in the open turn
+ * │ auto semantic prune at trigger.contextRatio (jevPruneRatio)
+ * └─ inherited basic listener
+ * compactIfNeeded at summaryRatio → optional size pruner → summary
  * ```
  *
  * Deployment: mount this entry instead of `@deepseek-ai/dsh-compaction-basic`
  * (exactly one engine may claim the `compaction` service). The companion
- * "." entry stays available for the side-by-side mode (§6.6).
+ * "." entry stays available for the side-by-side mode.
  */
 
 import { BasicCompactionEngine } from "@deepseek-ai/dsh-compaction-basic";
@@ -60,7 +60,7 @@ export class JevCompactionEngine extends BasicCompactionEngine {
     // pre-step listener, the per-session mutex/cooldown, the armed-plan
     // queue, and the /jev-compact command. Everything it registers is scoped
     // to the same fiber as this engine, so teardown stays symmetric. The
-    // optional backend is the test seam (production wires the System One
+    // optional backend is the test hook (production wires the System One
     // client from the resolved config).
     this.prune = new JevCompactionService(ctx, resolved.companionRaw, backend);
   }

@@ -1,5 +1,5 @@
 /**
- * Reconstruction (result-shaping SPEC §20, §25).
+ * Reconstruction.
  *
  * The shaped text is the original line sequence with each collapsed run
  * replaced in place, so ordering is preserved by construction. Markers state
@@ -17,7 +17,7 @@ import type { LineRun } from "./cluster.js";
 /** Every marker this plugin writes into shaped output starts with this. */
 export const SHAPING_MARKER_PREFIX = "[dsh-jev-compaction:";
 
-/** Detects a result this plugin has already shaped (idempotence, §26). */
+/** Detects a result this plugin has already shaped (idempotence). */
 export function isShapedText(text: string): boolean {
   return text.includes(SHAPING_MARKER_PREFIX);
 }

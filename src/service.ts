@@ -1,11 +1,10 @@
 /**
- * The `ctx.jevCompaction` service: orchestration of one compaction run
- * (SPEC §5.3 pipeline), the automatic pressure trigger on a prepended
- * `agent/pre-step` listener, the per-session mutex, cooldown accounting, and
- * the deferred manual application demanded by the open-turn invariant (see
- * docs/compatibility.md §4).
+ * The `ctx.jevCompaction` service: orchestration of one compaction run,
+ * the automatic pressure trigger on a prepended `agent/pre-step` listener,
+ * the per-session mutex, cooldown accounting, and the deferred manual
+ * application demanded by the open-turn invariant (see docs/compatibility.md).
  *
- * Fail-open everywhere (SPEC §4): an automatic failure logs and continues;
+ * Fail-open everywhere: an automatic failure logs and continues;
  * the agent loop and the built-in compaction stay untouched.
  */
 
@@ -109,7 +108,7 @@ export interface JevRunReport {
 }
 
 /**
- * Fail-open mapping when the decision backend throws (SPEC §18.4).
+ * Fail-open mapping when the decision backend throws.
  * Chat continues; pruning is skipped with `jev-failed`.
  */
 export function decisionFailureSkip(
@@ -188,7 +187,7 @@ export class JevCompactionService extends Service {
   /** Backends whose key warning was already logged, keyed provider+variable. */
   private readonly warnedCredentials = new Set<string>();
   private readonly disposers: Array<() => void> = [];
-  /** Immediate result shaping at `tools/post-execute` (SPEC result-shaping). */
+  /** Immediate result shaping at `tools/post-execute`. */
   readonly shaping: ResultShapingSubsystem;
 
   /** Resolved and immutable configuration (re-resolved on settings change). */
@@ -215,7 +214,7 @@ export class JevCompactionService extends Service {
     this.tokenMeter = (
       ctx as unknown as { tokenMeter: TokenMeterLike }
     ).tokenMeter;
-    // Test seam: stub decision engines are wired here, not through config.
+    // Test hook: stub decision engines are wired here, not through config.
     // The live client reads the configuration per request, so a settings
     // change to the endpoint, key variable, timeout or retries applies at
     // once without rebuilding the plugin.
@@ -460,7 +459,7 @@ export class JevCompactionService extends Service {
     const state = this.sessionState(sessionId);
     const started = Date.now();
 
-    // Per-session mutex (SPEC §17.1): one run at a time, shared by the
+    // Per-session mutex: one run at a time, shared by the
     // auto and manual paths.
     if (state.running !== undefined) {
       return this.skippedReport(mode, sessionId, "busy", started);
@@ -527,7 +526,7 @@ export class JevCompactionService extends Service {
     );
     if (signal.aborted) return skip("busy");
 
-    // Automatic trigger policy (SPEC §8). Without a resolvable context
+    // Automatic trigger policy. Without a resolvable context
     // window the ratio check falls back to the absolute token floor.
     if (mode === "auto") {
       if (
@@ -550,7 +549,7 @@ export class JevCompactionService extends Service {
       }
     }
 
-    // Candidate collection with pinning (SPEC §9).
+    // Candidate collection with pinning.
     const nodeTokens = surfaceNodeTokens(this.tokenMeter, session);
     const { candidates, callIndex } = collectCandidates(
       session,
@@ -583,10 +582,10 @@ export class JevCompactionService extends Service {
       surfaceTokens: pressure.estimatedSurfaceTokens,
     });
 
-    // Snapshot identity before async work (SPEC §17.2).
+    // Snapshot identity before async work.
     const surfaceSnapshot = captureSurfaceSnapshot(session);
 
-    // State building + fitting (SPEC §11, §19).
+    // State building + fitting.
     const features = extractFeatures(candidates, callIndex);
     const built = buildState(
       session,
@@ -595,8 +594,8 @@ export class JevCompactionService extends Service {
     );
     const fitted = fitState(built.state, this.config.state.maxStateTokens);
 
-    // Batching + scoring (SPEC §18, §19). Any malformed batch fails the
-    // run fail-open (SPEC §18.4).
+    // Batching + scoring. Any malformed batch fails the
+    // run fail-open.
     const batches = batchCandidates(
       candidates,
       fitted.tokens,
@@ -640,7 +639,7 @@ export class JevCompactionService extends Service {
       return { ...skip(failure.skipped), error: failure.error };
     }
 
-    // Policy + rendering (SPEC §13, §14).
+    // Policy + rendering.
     const items: PlanItem[] = candidates.map((candidate) => {
       const candidateScores = scores.get(candidate.callId);
       const action = decideAction(
@@ -674,7 +673,7 @@ export class JevCompactionService extends Service {
     });
     const plan = buildPlan(surfaceSnapshot, items);
 
-    // Minimum savings gate (SPEC §20): auto skips; dry-run and manual
+    // Minimum savings gate: auto skips; dry-run and manual
     // previews always report the plan.
     if (mode === "auto" && !meetsSavingsGate(plan.savings, this.config)) {
       return skip("savings-gate");
@@ -717,7 +716,7 @@ export class JevCompactionService extends Service {
     // Manual non-dry-run previews queue the application for the next
     // pre-step: command handlers run between turns, where the open-turn
     // invariant forbids `tool/result` replacements (see
-    // docs/compatibility.md §4). applyNow runs consume the queue inside
+    // docs/compatibility.md). applyNow runs consume the queue inside
     // the open turn instead of re-queueing.
     if (mode === "manual" && options.applyNow !== true) {
       state.pendingManual = true;
@@ -743,7 +742,7 @@ export class JevCompactionService extends Service {
     }
 
     // Automatic application inside the open turn: revalidate, then land
-    // replacements in snapshotted surface order (SPEC §16).
+    // replacements in snapshotted surface order.
     let applied: readonly AppliedEntry[];
     let failureMessage: string | undefined;
     try {

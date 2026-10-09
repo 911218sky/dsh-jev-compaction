@@ -1,5 +1,5 @@
 /**
- * Archive retention (result-shaping SPEC §24).
+ * Archive retention.
  *
  * Collection is lazy and never on the shaping path: it runs after a write, or
  * on demand, and it stops at the first failure instead of escalating. The rule

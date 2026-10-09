@@ -1,5 +1,5 @@
 /**
- * Host-side settings wiring for the plugin (result-shaping SPEC §33-§34).
+ * Host-side settings wiring for the plugin.
  *
  * DSH 0.2 replaced `settings.installSection` / SettingsScope with SettingsForms
  * over the cordis profile entry (`dsh-jev-compaction`). Live values come from

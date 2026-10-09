@@ -1,11 +1,11 @@
 /**
- * The `/jev-compact` slash command (SPEC §21).
+ * The `/jev-compact` slash command.
  *
  * `/jev-compact --dry-run` runs the full pipeline read-only.
  * `/jev-compact` runs the pipeline and queues the mutation for the next
  * `agent/pre-step` (command handlers execute between turns, where the
  * session's open-turn invariant forbids `tool/result` replacements — see
- * docs/compatibility.md §4). The command itself never creates a user model
+ * docs/compatibility.md). The command itself never creates a user model
  * message.
  */
 
@@ -258,7 +258,7 @@ export function registerJevCompactCommand(
         const agent: AgentLike = invocation.agent;
         try {
           const report = await service.runManualDry(agent, invocation.signal);
-          // Manual failure behavior (SPEC §29): the operator sees the reason
+          // Manual failure behavior: the operator sees the reason
           // (missing key, transport, validation), not just "nothing to do".
           if (report.error !== undefined) {
             return {

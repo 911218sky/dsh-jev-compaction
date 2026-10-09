@@ -1,5 +1,5 @@
 /**
- * Replacement text renderers (SPEC §14).
+ * Replacement text renderers.
  *
  * Wording is deliberately neutral: the stub never claims Jev proved the
  * result irrelevant — only that it was pruned from the active model context.
@@ -25,7 +25,7 @@ export const PRUNED_BY = "[dsh-jev-compaction]";
  * the session log; the marker says exactly that.
  *
  * When the result had already been reduced by immediate shaping before it was
- * persisted (result-shaping SPEC §26), the stub records two extra facts: the
+ * persisted, the stub records two extra facts: the
  * visible content was a reconstruction, and — when one exists — the reference
  * under which the pre-shaping original was archived. The reference is a
  * content hash, never a filesystem path, and it is not a capability: nothing

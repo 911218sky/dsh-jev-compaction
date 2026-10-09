@@ -1,5 +1,5 @@
 /**
- * Line-shape normalization (result-shaping SPEC §16).
+ * Line-shape normalization.
  *
  * Two lines share a shape when they differ only in volatile values. The shape
  * is used for *clustering only* — it never reaches the model — so the bar for
@@ -7,9 +7,9 @@
  * evidence is high.
  *
  * Replaced (values vary between runs, carry no decision-relevant meaning):
- *   ANSI escape sequences, ISO-8601 and clock timestamps, UUIDs, long hex
- *   hashes, percentages, and standalone counters of any width (`test 81`,
- *   `pkg-12`, `progress 1%`).
+ * ANSI escape sequences, ISO-8601 and clock timestamps, UUIDs, long hex
+ * hashes, percentages, and standalone counters of any width (`test 81`,
+ * `pkg-12`, `progress 1%`).
  *
  * Protected, and therefore part of the shape (each may be exactly what the
  * next decision needs): line and column positions, dotted versions and file
@@ -58,7 +58,7 @@ const COUNTER_PATTERN = /(?<![\w.:])\d+(?![\w.])/gu;
  * Spans that must survive normalization, tried left to right:
  *
  * - a `file.ts:123:45` position (line and column are evidence a diagnostic is
- *   read against);
+ * read against);
  * - a protocol verb, a path and an HTTP status code;
  * - an exit or status code spelled out after `code`, `status` or `exit`.
  *

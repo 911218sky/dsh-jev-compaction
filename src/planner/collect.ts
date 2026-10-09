@@ -1,5 +1,5 @@
 /**
- * Candidate collection and pinning (SPEC §9).
+ * Candidate collection and pinning.
  *
  * Only current model-visible `tool/result` surface nodes with text-only
  * content can become candidates. System/user/assistant nodes, the newest
@@ -20,7 +20,7 @@ import { PRUNED_BY } from "../mutation/render.js";
 import { isShapedText, readArchiveRef } from "../result-shaping/reconstruct.js";
 import type { ResolvedJevCompactionConfig } from "../config.js";
 
-/** Normalized candidate model (SPEC §9.2) — no DSH event shapes. */
+/** Normalized candidate model — no DSH event shapes. */
 export interface ToolResultCandidate {
   /** Seq of the current surface node backing this candidate. */
   surfaceSeq: SessionSeq;
@@ -36,7 +36,7 @@ export interface ToolResultCandidate {
   toolArgumentsPreview?: string;
   /**
    * The result was already reduced by immediate result shaping before it was
-   * persisted (result-shaping SPEC §26). It stays a candidate for later
+   * persisted. It stays a candidate for later
    * truncation or stubbing — only its omission markers must be
    * recognized so a stub does not pretend the output was untouched.
    */
@@ -98,7 +98,7 @@ function argumentsPreview(
  * Collect eligible candidates from one stable surface read.
  *
  * @param nodeTokens optional per-node heuristic token prices; used to extend
- *   the recent pin from the tail by `preserve.recentTokens`.
+ * the recent pin from the tail by `preserve.recentTokens`.
  */
 export function collectCandidates(
   session: Session,
@@ -141,7 +141,7 @@ export function collectCandidates(
     const raw = readRawResult(surfaceEvents[index]!);
     if (raw === undefined) continue;
     // Recent window (position or measured tokens), current turn, errors,
-    // ambiguous pairs and non-text shapes are all pinned (SPEC §9.1).
+    // ambiguous pairs and non-text shapes are all pinned.
     if (index >= pinFrom) continue;
     if (raw.turn >= currentTurn && currentTurn > 0) continue;
     if (config.preserve.errors && raw.isError) continue;
@@ -151,7 +151,7 @@ export function collectCandidates(
     // repeated runs converge instead of re-pruning the marker. A node that
     // was *shaped* before persistence is not pinned: it is a normal candidate
     // that may later be truncated or stubbed, and its marker is carried into
-    // the stub (result-shaping SPEC §26).
+    // the stub.
     if (raw.text.includes(PRUNED_BY)) continue;
     const info = callIndex.get(raw.callId)!;
     const shaped = isShapedText(raw.text);

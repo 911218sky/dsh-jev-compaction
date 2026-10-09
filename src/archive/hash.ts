@@ -1,5 +1,5 @@
 /**
- * Content addressing for archived results (result-shaping SPEC §23).
+ * Content addressing for archived results.
  *
  * The hash is taken over a canonical serialization: keys sorted, only
  * JSON-representable data. Two runs of the same command that produce the same

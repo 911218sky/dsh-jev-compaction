@@ -1,5 +1,5 @@
 /**
- * Question construction (SPEC §12).
+ * Question construction.
  *
  * v1 asks two semantic preservation questions per candidate: whether the
  * substantive contents are still needed, and whether they must remain

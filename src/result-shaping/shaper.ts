@@ -1,16 +1,16 @@
 /**
- * The immediate result shaper (result-shaping SPEC §14): the staged pipeline
+ * The immediate result shaper: the staged pipeline
  * that turns one oversized tool result into a smaller one.
  *
- *   raw text
- *     ↓  deterministic segmentation + line-shape clustering
- *   collapsible runs
- *     ↓  deterministic pins (head, tail, conclusions) split the runs
- *   classifier questions, bounded and batched
- *     ↓  local policy: collapse only on a decisive pair of answers
- *   reconstruction with neutral markers
- *     ↓  minimum-savings gate
- *   shaped text, or nothing at all
+ * raw text
+ * ↓ deterministic segmentation + line-shape clustering
+ * collapsible runs
+ * ↓ deterministic pins (head, tail, conclusions) split the runs
+ * classifier questions, bounded and batched
+ * ↓ local policy: collapse only on a decisive pair of answers
+ * reconstruction with neutral markers
+ * ↓ minimum-savings gate
+ * shaped text, or nothing at all
  *
  * Every stage fails towards keeping the original. The pipeline never throws:
  * a failure is a skip, counted and logged, and the caller keeps the result it

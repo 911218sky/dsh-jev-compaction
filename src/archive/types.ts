@@ -1,5 +1,5 @@
 /**
- * Archive contract (result-shaping SPEC §22).
+ * Archive contract.
  *
  * Immediate shaping happens before DSH persists the final tool result, so the
  * pre-shaping content is not recoverable from session replay. The archive is

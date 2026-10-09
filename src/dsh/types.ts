@@ -3,7 +3,7 @@
  *
  * Everything outside `src/dsh/` operates on these types only — DSH
  * event/event-map shapes never leak into the planner, the Jev client, or the
- * mutation renderer (SPEC §24). Host services (`tokenMeter`, `llm`,
+ * mutation renderer. Host services (`tokenMeter`, `llm`,
  * `commands`) are viewed through structural interfaces at the registration
  * seam, the established repo convention for host-only plugins.
  */
@@ -97,7 +97,7 @@ export interface LlmRuntimeLike {
   ): Promise<{ context?: { contextWindow: number } }>;
 }
 
-/** Pressure snapshot exposed to the trigger policy (SPEC §8). */
+/** Pressure snapshot exposed to the trigger policy. */
 export interface PressureSnapshot {
   /** Estimated tokens of the current surface. */
   estimatedSurfaceTokens: number;

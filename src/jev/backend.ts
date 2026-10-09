@@ -1,5 +1,5 @@
 /**
- * System One HTTP client (SPEC §18): the one wire implementation shared by
+ * System One HTTP client: the one wire implementation shared by
  * every provider preset. A `typesafe` config points it at the hosted Jev
  * endpoint, a `jeff` config at a self-hosted Jeff server, and a `custom`
  * config at any System One-compatible deployment; only the resolved

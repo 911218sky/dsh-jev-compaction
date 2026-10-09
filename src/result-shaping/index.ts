@@ -1,6 +1,5 @@
 /**
- * Wiring of the immediate result shaper into the plugin (result-shaping SPEC
- * §29, §32, §48).
+ * Wiring of the immediate result shaper into the plugin.
  *
  * The subsystem owns everything the two layers must not share: its own
  * per-turn budget, its own metrics, and its own archive handle. Rebuilding the
@@ -50,7 +49,7 @@ export interface ResultShapingDeps {
   readonly debug: (event: string, details: Record<string, unknown>) => void;
   readonly info: (event: string, details: Record<string, unknown>) => void;
   readonly warn: (event: string, details: Record<string, unknown>) => void;
-  /** Test seam: a pre-built archive backend. */
+  /** Test hook: a pre-built archive backend. */
   readonly archive?: OriginalResultArchive;
 }
 

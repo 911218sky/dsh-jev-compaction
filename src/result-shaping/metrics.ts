@@ -1,5 +1,5 @@
 /**
- * Immediate-shaping metrics (result-shaping SPEC §32).
+ * Immediate-shaping metrics.
  *
  * Counters are process-scoped and shared by every session: the settings card
  * and the logs report what this process did, not what one conversation did.

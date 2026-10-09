@@ -1,5 +1,5 @@
 /**
- * Per-turn shaping budget (result-shaping SPEC §29-§31).
+ * Per-turn shaping budget.
  *
  * Tool calls settle in parallel and out of order, so the budget is keyed by
  * the session and the turn number read from the session log — never by

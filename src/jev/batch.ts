@@ -1,9 +1,9 @@
 /**
- * Question batching with a bounded request budget and bounded concurrency
- * (SPEC §19). The state is sent complete with every batch; a batch's
- * questions must fit `maxRequestTokens - stateTokens`, otherwise the
- * candidates are split further. A batch that cannot fit even alone fails the
- * run fail-open at the caller.
+ * Question batching with a bounded request budget and bounded concurrency.
+ * The state is sent complete with every batch; a batch's questions must fit
+ * `maxRequestTokens - stateTokens`, otherwise the candidates are split
+ * further. A batch that cannot fit even alone fails the run fail-open at the
+ * caller.
  */
 
 import type { ToolResultCandidate } from "../planner/collect.js";

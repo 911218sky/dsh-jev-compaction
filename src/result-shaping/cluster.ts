@@ -1,6 +1,5 @@
 /**
- * Analysis of a result's text into collapsible runs (result-shaping SPEC §15,
- * §16).
+ * Analysis of a result's text into collapsible runs.
  *
  * Only *contiguous* lines that share a shape are ever grouped, which is what
  * keeps reconstruction trivially order-preserving: the shaped output is the

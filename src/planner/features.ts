@@ -1,15 +1,15 @@
 /**
- * Deterministic feature extraction (SPEC §10).
+ * Deterministic feature extraction.
  *
  * Cheap local signals that ride into the Jev state and bias preservation.
  * Features are advisory: they never delete anything on their own, and Jev
- * output never overrides a deterministic pin (SPEC §5.3).
+ * output never overrides a deterministic pin.
  */
 
 import type { ToolCallInfo } from "../dsh/surface.js";
 import type { ToolResultCandidate } from "./collect.js";
 
-/** Rerunnability classes (SPEC §9.2). */
+/** Rerunnability classes. */
 export type Rerunnable = "cheap" | "moderate" | "expensive" | "unknown";
 
 /** Tools whose output is normally cheap to reproduce. */
@@ -146,7 +146,7 @@ function sameTarget(
  * Supersession: a later call to the same tool targeting the same path (or
  * the same command) marks the older result. Superseded reads of a path that
  * also saw an intermediate write are the strongest stale signal, but v1
- * keeps this advisory either way (SPEC §10.1).
+ * keeps this advisory either way.
  */
 export function extractFeatures(
   candidates: readonly ToolResultCandidate[],
@@ -196,7 +196,7 @@ export function extractFeatures(
   return features;
 }
 
-/** One-line feature summary rendered into the Jev state (SPEC §11). */
+/** One-line feature summary rendered into the Jev state. */
 export function formatFeatures(
   features: CandidateFeatures | undefined,
 ): string {

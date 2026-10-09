@@ -1,5 +1,5 @@
 /**
- * Pressure measurement over `ctx.tokenMeter` (SPEC §6.2, §8).
+ * Pressure measurement over `ctx.tokenMeter`.
  *
  * Prefers the durable `session.requestContext().contextWindow` when the host
  * has logged `request/context`. Falls back to `llm.resolveModelInfo` via
@@ -30,7 +30,7 @@ function applyContextWindow(
 /**
  * Measure the current session pressure. Never throws on capacity lookup
  * failures — an unresolvable window degrades the snapshot, it does not fail
- * the run (SPEC §4 fail-open).
+ * the run (fail-open).
  */
 export async function measurePressure(
   session: Session,

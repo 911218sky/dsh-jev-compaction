@@ -1,5 +1,5 @@
 /**
- * Decision policy (SPEC §13): Jev proposes, local policy disposes.
+ * Decision policy: Jev proposes, local policy disposes.
  *
  * Probabilities come from the (already validated) backend answers; the
  * action is derived deterministically here. Pinned candidates never reach
@@ -8,7 +8,7 @@
 
 import type { ResolvedJevCompactionConfig } from "../config.js";
 
-/** Mutation actions (SPEC §14). */
+/** Mutation actions. */
 export type PruneAction = "KEEP_FULL" | "KEEP_TRUNCATED" | "KEEP_STUB";
 
 /** Validated per-candidate answers. */
@@ -24,8 +24,8 @@ export interface CandidateScores {
  *
  * - `needContents >= fullThreshold` → full;
  * - `needContents >= truncateThreshold` → truncated, unless verbatim is
- *   asked and clearly unwanted (`needVerbatim < truncateThreshold`), which
- *   downgrades to a stub;
+ * asked and clearly unwanted (`needVerbatim < truncateThreshold`), which
+ * downgrades to a stub;
  * - otherwise → stub.
  */
 export function decideAction(
